@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title th:text="'llm-index — ' + ${job.id}">llm-index</title>
   <meta th:if="${job.status.name() == 'PENDING' or job.status.name() == 'RUNNING'}" http-equiv="refresh" content="2"/>
-  <link rel="stylesheet" th:href="@{/style.css}"/>
+  <link rel="stylesheet" th:href="@{/llm-indexer/style.css}"/>
   <th:block th:if="${job.status.name() == 'DONE'}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css"/>
@@ -14,13 +14,14 @@
 <body>
 <header class="nav">
   <div class="nav-inner">
-    <a class="wordmark" th:href="@{/}"><span class="wordmark-dot"></span>llm-index</a>
+    <a class="wordmark" th:href="@{/llm-indexer/}"><span class="wordmark-dot"></span>llm-index</a>
+    <a class="nav-github" href="https://github.com/Heeneth12/llm-indexer" target="_blank" rel="noopener">GitHub &rarr;</a>
   </div>
 </header>
 
 <section class="breadcrumb-bar">
   <div class="wrap-inner">
-    <a class="ghost-link" th:href="@{/}">&larr; New index</a>
+    <a class="ghost-link" th:href="@{/llm-indexer/}">&larr; New index</a>
   </div>
 </section>
 
@@ -66,20 +67,20 @@
       </div>
 
       <div id="panel-graph" class="tab-panel">
-        <form class="form-row" method="get" th:action="@{/jobs/{id}/graph(id=${job.id})}" target="graph-frame"
+        <form class="form-row" method="get" th:action="@{/llm-indexer/jobs/{id}/graph(id=${job.id})}" target="graph-frame"
               style="margin-bottom: 0.75rem;">
           <input type="text" name="filter" placeholder="Filter by name (optional)"/>
           <input type="number" name="hops" min="1" max="8" placeholder="hops" style="max-width:6em;" title="expand N hops from filter"/>
           <button type="submit">Load</button>
         </form>
-        <iframe name="graph-frame" th:src="@{/jobs/{id}/graph(id=${job.id})}"
+        <iframe name="graph-frame" th:src="@{/llm-indexer/jobs/{id}/graph(id=${job.id})}"
                 style="width:100%; height:70vh; border:1px solid var(--hairline); border-radius:var(--radius);"></iframe>
         <p class="option-foot">Drag nodes around, double-click one to focus its neighborhood, or filter above
           (with an optional hop count) to cut down a large graph before it renders.</p>
       </div>
 
       <div id="panel-query" class="tab-panel">
-        <form class="form-row" method="post" th:action="@{/jobs/{id}/query(id=${job.id})}" style="margin-bottom: 1.25rem;">
+        <form class="form-row" method="post" th:action="@{/llm-indexer/jobs/{id}/query(id=${job.id})}" style="margin-bottom: 1.25rem;">
           <input type="text" name="term" placeholder="Class name or keyword" th:value="${term}" required/>
           <input type="number" name="hops" min="1" max="8" value="3" style="max-width:5em;" title="traversal depth"/>
           <button type="submit">Search</button>
@@ -91,7 +92,7 @@
           <h3>Matching code</h3>
           <ul class="result-list">
             <li th:each="m : ${queryResult.matches}">
-              <a th:href="@{/jobs/{id}/file(id=${job.id}, path=${m.filePath}, line=${m.line})}"
+              <a th:href="@{/llm-indexer/jobs/{id}/file(id=${job.id}, path=${m.filePath}, line=${m.line})}"
                  th:text="${m.name} + ' (' + ${m.filePath} + ':' + ${m.line} + ')'"></a>
               <span style="color:var(--mute);font-size:0.8rem;font-weight:400;" th:text="' — ' + ${m.type}"></span>
             </li>

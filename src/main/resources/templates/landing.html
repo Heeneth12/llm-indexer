@@ -5,13 +5,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>llm-index</title>
-  <link rel="stylesheet" th:href="@{/style.css}" />
+  <link rel="stylesheet" th:href="@{/llm-indexer/style.css}" />
 </head>
 
 <body>
   <header class="nav">
     <div class="nav-inner">
-      <a class="wordmark" th:href="@{/}"><span class="wordmark-dot"></span>llm-index</a>
+      <a class="wordmark" th:href="@{/llm-indexer/}"><span class="wordmark-dot"></span>llm-index</a>
+      <a class="nav-github" href="https://github.com/Heeneth12/llm-indexer" target="_blank" rel="noopener">GitHub &rarr;</a>
     </div>
   </header>
 
@@ -43,7 +44,7 @@
         <span th:text="${startupJob.repoUrl}"></span>
         <span class="badge-tag" style="margin-left:0.5rem;" th:classappend="${startupJob.status}" th:text="${startupJob.status}"></span>
       </div>
-      <a class="btn-outline" style="padding:0.6rem 1rem;" th:href="@{/jobs/{id}(id=${startupJob.id})}">View index &rarr;</a>
+      <a class="btn-outline" style="padding:0.6rem 1rem;" th:href="@{/llm-indexer/jobs/{id}(id=${startupJob.id})}">View index &rarr;</a>
     </div>
 
     <div class="feature-row">
@@ -299,8 +300,8 @@ Read only the files listed above. Start at the file:line refs.</code></pre>
         <div class="codeblock">
           <button class="btn-outline copy-btn" type="button" data-copy-target="local-cmds">Copy</button>
           <pre id="local-cmds"><code>./mvnw -q -DskipTests clean package
-java -jar target/indexer-*.jar build .
-java -jar target/indexer-*.jar query MyClassName</code></pre>
+java -jar target/llm-index-exec.jar build .
+java -jar target/llm-index-exec.jar query MyClassName</code></pre>
         </div>
         <p class="option-foot">First command builds it, second indexes the current directory,
           third searches the graph and writes <code>context.md</code>.</p>
@@ -315,7 +316,7 @@ java -jar target/indexer-*.jar query MyClassName</code></pre>
         <p class="option-desc">No local setup needed. Paste a public git URL and we'll clone
           it, index it here, and give you a browsable, searchable result.</p>
 
-        <form class="form-row option-form" method="post" th:action="@{/index}">
+        <form class="form-row option-form" method="post" th:action="@{/llm-indexer/index}">
           <input type="text" name="repoUrl" placeholder="https://github.com/owner/repo.git" required />
           <button type="submit">Index this repo</button>
         </form>
@@ -323,6 +324,125 @@ java -jar target/indexer-*.jar query MyClassName</code></pre>
           workspace and discarded after 30 minutes.</p>
       </div>
 
+    </div>
+
+    <h2 class="section-label" style="margin-top: 3rem;">Reference</h2>
+    <p class="section-intro">Every feature, every CLI command, every HTTP route — what it does and why it's there.</p>
+
+    <div class="card">
+      <span class="corner-square"></span>
+      <h3 class="ref-subhead">Features</h3>
+      <div style="overflow-x:auto;">
+        <table class="ref-table">
+          <tr><th>Feature</th><th>How to use it</th><th>Advantage</th></tr>
+          <tr>
+            <td>Full-repo indexing</td>
+            <td><code>indexer build</code>, or <code>llm-index.startup.*</code> properties</td>
+            <td class="desc">Nothing is skipped. Rebuilds are incremental — a SHA-256 cache means only changed files get re-parsed.</td>
+          </tr>
+          <tr>
+            <td>Targeted context retrieval</td>
+            <td><code>indexer query &lt;term&gt;</code>, or <code>POST /jobs/{id}/query</code></td>
+            <td class="desc">Returns only the matching file:line references — typically under 10% of a file's raw code, not the whole thing.</td>
+          </tr>
+          <tr>
+            <td>Knowledge graph (SQLite)</td>
+            <td><code>graph.db</code> — open with any SQLite client, or query through the app</td>
+            <td class="desc">Portable and inspectable. Works with any tool that can read a file or run SQL — no server required.</td>
+          </tr>
+          <tr>
+            <td>Interactive graph visualization</td>
+            <td><code>indexer visualize</code>, or <code>GET /jobs/{id}/graph</code></td>
+            <td class="desc">See structure and blast radius visually. <code>--filter</code> / <code>--hops</code> keep large repos readable instead of a hairball.</td>
+          </tr>
+          <tr>
+            <td>Web app (paste a URL)</td>
+            <td><code>POST /llm-indexer/index</code></td>
+            <td class="desc">No local setup. Index any public repo straight from a browser.</td>
+          </tr>
+          <tr>
+            <td>Auto-index on startup</td>
+            <td><code>llm-index.startup.enabled=true</code> + <code>path</code> or <code>repo-url</code></td>
+            <td class="desc">Zero manual steps. The index is ready the moment the app boots, and can reindex itself on every restart.</td>
+          </tr>
+          <tr>
+            <td>Use as a Maven library</td>
+            <td>JitPack dependency: <code>com.github.Heeneth12:llm-indexer</code></td>
+            <td class="desc">Embed the indexing engine directly inside your own Spring Boot app — same classes, no separate service to run.</td>
+          </tr>
+          <tr>
+            <td>Works with any agent</td>
+            <td>Plain markdown + SQLite output, no plugin required</td>
+            <td class="desc">Nothing agent-specific. Claude Code, Cursor, Copilot, Aider, or any chat LLM can read the output as-is.</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="corner-square"></span>
+      <h3 class="ref-subhead">CLI commands</h3>
+      <div style="overflow-x:auto;">
+        <table class="ref-table">
+          <tr><th>Command</th><th>Options</th><th>Description</th></tr>
+          <tr>
+            <td><code>build [path]</code></td>
+            <td><code>-o, --out &lt;dir&gt;</code> (default <code>.llm-index</code>)<br/><code>--full</code></td>
+            <td class="desc">Indexes the project: tree, skeletons, dependencies, and the graph. <code>--full</code> forces a complete re-parse, ignoring the incremental cache.</td>
+          </tr>
+          <tr>
+            <td><code>query &lt;term&gt;</code></td>
+            <td><code>-d, --dir &lt;dir&gt;</code><br/><code>--hops &lt;n&gt;</code> (default <code>3</code>)</td>
+            <td class="desc">Searches the graph for a class or keyword — matches, what depends on it, and its outward call chain. Writes <code>context.md</code>.</td>
+          </tr>
+          <tr>
+            <td><code>visualize</code></td>
+            <td><code>-d, --dir &lt;dir&gt;</code><br/><code>--filter &lt;term&gt;</code><br/><code>--hops &lt;n&gt;</code><br/><code>--no-open</code></td>
+            <td class="desc">Generates <code>.llm-index/graph.html</code> (an interactive vis-network page) and opens it, unless <code>--no-open</code> is set.</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="corner-square"></span>
+      <h3 class="ref-subhead">HTTP API</h3>
+      <p style="color:var(--mute); font-size:0.85rem; margin:0 0 1rem;">Base path: <code>/llm-indexer</code></p>
+      <div style="overflow-x:auto;">
+        <table class="ref-table">
+          <tr><th>Route</th><th>Params</th><th>Description</th></tr>
+          <tr>
+            <td><span class="http-method get">GET</span><code>/llm-indexer/</code></td>
+            <td class="desc">—</td>
+            <td class="desc">Landing page: paste-a-URL form, plus a link to the configured startup job if one exists.</td>
+          </tr>
+          <tr>
+            <td><span class="http-method post">POST</span><code>/llm-indexer/index</code></td>
+            <td><code>repoUrl</code></td>
+            <td class="desc">Clones and indexes a public git repo, then redirects to its job page.</td>
+          </tr>
+          <tr>
+            <td><span class="http-method get">GET</span><code>/llm-indexer/jobs/{id}</code></td>
+            <td class="desc">—</td>
+            <td class="desc">Job status and results: Tree / Skeleton / Dependencies / Graph / Query tabs.</td>
+          </tr>
+          <tr>
+            <td><span class="http-method post">POST</span><code>/llm-indexer/jobs/{id}/query</code></td>
+            <td><code>term</code>, <code>hops</code></td>
+            <td class="desc">Runs a graph query and re-renders the job page with matches, impact, and call chain.</td>
+          </tr>
+          <tr>
+            <td><span class="http-method get">GET</span><code>/llm-indexer/jobs/{id}/graph</code></td>
+            <td><code>filter</code>, <code>hops</code> (optional)</td>
+            <td class="desc">The interactive graph as a standalone HTML page — what the Graph tab embeds via iframe.</td>
+          </tr>
+          <tr>
+            <td><span class="http-method get">GET</span><code>/llm-indexer/jobs/{id}/file</code></td>
+            <td><code>path</code>, <code>line</code> (optional)</td>
+            <td class="desc">Source file viewer, jumping straight to and highlighting the given line.</td>
+          </tr>
+        </table>
+      </div>
     </div>
   </main>
 

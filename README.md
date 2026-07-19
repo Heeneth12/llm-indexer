@@ -70,6 +70,22 @@ classpath like any normal library. Note it currently pulls in the full Spring Bo
 transitively too, since core/CLI/web all live in one Maven module — fine for a quick embed,
 worth splitting into a lighter `core`-only module later if that matters to you.
 
+**To use the Spring beans (`StartupIndexRunner`, `IndexJobService`, and the web UI/`WebController`)
+inside your own Spring Boot app**, they live in `com.llm.indexer.web`, which your app's default
+component scan (rooted at your `@SpringBootApplication` class's package) won't see on its own.
+Add:
+
+```java
+@SpringBootApplication
+@ComponentScan(basePackages = {"your.own.package", "com.llm.indexer.web"})
+@ConfigurationPropertiesScan(basePackages = "com.llm.indexer.web")
+public class YourApplication { ... }
+```
+
+With that, `llm-index.startup.*` properties work exactly as documented below, and the full UI
+mounts at `/llm-indexer/**` in your app — it can't collide with your own routes or static
+assets, since everything (pages, CSS, API) is namespaced under that one prefix.
+
 ## Web app
 
 ```bash
@@ -77,11 +93,16 @@ worth splitting into a lighter `core`-only module later if that matters to you.
 # or: java -jar target/llm-index-exec.jar
 ```
 
-Open `http://localhost:8080`, paste a public git URL. The server shallow-clones it
-into a temporary workspace, runs the same indexing engine as the CLI, and gives you
+Open `http://localhost:8080/llm-indexer/`, paste a public git URL. The server shallow-clones
+it into a temporary workspace, runs the same indexing engine as the CLI, and gives you
 a tabbed view (Tree / Skeleton / Dependencies / Graph / Query) plus a source viewer that
 jumps straight to the file:line a query result points at. Jobs and their temp clones are
 evicted after 30 minutes.
+
+Every route — pages, the CSS, the API — lives under `/llm-indexer/**` only. This is
+deliberate: when llm-index is embedded as a library inside another Spring Boot app (see
+below), its whole UI mounts at one predictable, namespaced path and can't collide with
+that app's own routes or static assets.
 
 Only `http://` / `https://` URLs are accepted; local/private addresses are rejected.
 
@@ -109,10 +130,10 @@ llm-index.startup.graph-visualization-enabled=true  # also write .llm-index/grap
 
 With `graph-visualization-enabled=true`, `.llm-index/graph.html` is generated on every run alongside
 the markdown files — a static file you can open directly, in addition to the Graph tab at
-`/jobs/startup`.
+`/llm-indexer/jobs/startup`.
 
-Once configured, the result is always at `/jobs/startup` and linked from the landing page.
-This job is exempt from the 30-minute eviction that normal paste-a-URL jobs get, and its
+Once configured, the result is always at `/llm-indexer/jobs/startup` and linked from the
+landing page. This job is exempt from the 30-minute eviction that normal paste-a-URL jobs get, and its
 directory is never auto-deleted — safe to point `path` at your real working repo.
 
 ## Docker

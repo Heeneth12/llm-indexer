@@ -15,7 +15,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 @Controller
+@RequestMapping(WebController.BASE)
 public class WebController {
+
+    /** Every route this controller exposes lives under this prefix -- see also
+     *  WebMvcConfig (static resources) and StartupIndexRunner's log messages. */
+    public static final String BASE = "/llm-indexer";
 
     private final IndexJobService jobService;
 
@@ -26,7 +31,7 @@ public class WebController {
     @GetMapping("/")
     public String index(Model model) {
         jobService.getJob(StartupIndexRunner.STARTUP_JOB_ID).ifPresent(job -> model.addAttribute("startupJob", job));
-        return "index";
+        return "landing";
     }
 
     @PostMapping("/index")
@@ -34,16 +39,16 @@ public class WebController {
         String url = repoUrl == null ? "" : repoUrl.trim();
         if (url.isBlank()) {
             redirectAttributes.addFlashAttribute("error", "Please paste a git repository URL.");
-            return "redirect:/";
+            return "redirect:" + BASE + "/";
         }
         try {
             GitCloner.validate(url);
         } catch (IOException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
-            return "redirect:/";
+            return "redirect:" + BASE + "/";
         }
         String id = jobService.createJob(url);
-        return "redirect:/jobs/" + id;
+        return "redirect:" + BASE + "/jobs/" + id;
     }
 
     @GetMapping("/jobs/{id}")
@@ -55,7 +60,7 @@ public class WebController {
 
     @PostMapping("/jobs/{id}/query")
     public String queryJob(@PathVariable String id, @RequestParam String term,
-                            @RequestParam(defaultValue = "3") int hops, Model model) {
+            @RequestParam(defaultValue = "3") int hops, Model model) {
         IndexJob job = jobOrNotFound(id);
         model.addAttribute("job", job);
         model.addAttribute("term", term);
@@ -71,7 +76,7 @@ public class WebController {
 
     @GetMapping("/jobs/{id}/graph")
     public ResponseEntity<String> viewGraph(@PathVariable String id, @RequestParam(required = false) String filter,
-                                             @RequestParam(required = false) Integer hops) {
+            @RequestParam(required = false) Integer hops) {
         IndexJob job = jobOrNotFound(id);
         if (job.getStatus() != IndexJob.Status.DONE) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Job is not indexed yet");
@@ -86,7 +91,7 @@ public class WebController {
 
     @GetMapping("/jobs/{id}/file")
     public String viewFile(@PathVariable String id, @RequestParam String path,
-                            @RequestParam(required = false) Integer line, Model model) {
+            @RequestParam(required = false) Integer line, Model model) {
         IndexJob job = jobOrNotFound(id);
 
         Path file;
@@ -111,7 +116,7 @@ public class WebController {
     }
 
     private IndexJob jobOrNotFound(String id) {
-        return jobService.getJob(id).orElseThrow(() ->
-            new ResponseStatusException(HttpStatus.NOT_FOUND, "No such job: " + id));
+        return jobService.getJob(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No such job: " + id));
     }
 }

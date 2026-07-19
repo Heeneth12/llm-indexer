@@ -104,6 +104,78 @@ code {
   flex-shrink: 0;
 }
 
+.nav-github {
+  margin-left: auto;
+  color: var(--on-dark-mute);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.nav-github:hover {
+  color: var(--on-dark);
+}
+
+/* ---------- Reference tables (CLI / API / feature detail) ---------- */
+.ref-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.ref-table th {
+  text-align: left;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mute);
+  font-weight: 700;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--hairline-strong);
+  white-space: nowrap;
+}
+
+.ref-table td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--hairline);
+  vertical-align: top;
+  color: var(--body-c);
+}
+
+.ref-table tr:last-child td {
+  border-bottom: none;
+}
+
+.ref-table code {
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.ref-table .desc {
+  color: var(--mute);
+}
+
+.http-method {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 0.68rem;
+  letter-spacing: 0.02em;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+  margin-right: 0.4rem;
+}
+
+.http-method.get { color: var(--link-blue); }
+.http-method.post { color: var(--success-deep); }
+
+.ref-subhead {
+  margin: 2.5rem 0 0.75rem;
+}
+
+.ref-subhead:first-of-type {
+  margin-top: 0;
+}
+
 /* ---------- Hero (dark chapter) ---------- */
 .hero-dark {
   background: var(--surface-dark);
