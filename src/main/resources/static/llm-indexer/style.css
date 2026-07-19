@@ -104,14 +104,20 @@ code {
   flex-shrink: 0;
 }
 
-.nav-github {
+.nav-links {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.nav-link {
   color: var(--on-dark-mute);
   font-size: 0.85rem;
   font-weight: 700;
 }
 
-.nav-github:hover {
+.nav-link:hover {
   color: var(--on-dark);
 }
 
@@ -906,3 +912,76 @@ h3 {
   color: var(--mute);
   font-weight: 700;
 }
+
+/* ---------- Docs page ---------- */
+.toc {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  columns: 2;
+  column-gap: 2rem;
+}
+
+@media (max-width: 560px) {
+  .toc { columns: 1; }
+}
+
+.toc li {
+  margin-bottom: 0.5rem;
+  font-size: 0.88rem;
+  break-inside: avoid;
+}
+
+.toc a { font-weight: 400; }
+
+.doc-section {
+  margin-top: 3rem;
+}
+
+.doc-section:first-of-type {
+  margin-top: 0;
+}
+
+.doc-section h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 0.6rem;
+  scroll-margin-top: 1.5rem;
+}
+
+.doc-section p {
+  color: var(--body-c);
+  font-size: 0.92rem;
+  max-width: 60em;
+}
+
+.doc-section .section-intro {
+  margin: -0.3rem 0 1.25rem;
+}
+
+.arch-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.arch-list li {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--hairline);
+  font-size: 0.88rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.arch-list li:last-child { border-bottom: none; }
+
+.arch-list code {
+  flex: 0 0 auto;
+  min-width: 8em;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.arch-list span { color: var(--mute); }

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>llm-index — Documentation</title>
+  <link rel="stylesheet" th:href="@{/llm-indexer/style.css}"/>
+</head>
+<body>
+<header class="nav">
+  <div class="nav-inner">
+    <a class="wordmark" th:href="@{/llm-indexer/}"><span class="wordmark-dot"></span>llm-index</a>
+    <div class="nav-links">
+      <a class="nav-link" th:href="@{/llm-indexer/docs}">Docs</a>
+      <a class="nav-link" href="https://github.com/Heeneth12/llm-indexer" target="_blank" rel="noopener">GitHub &rarr;</a>
+    </div>
+  </div>
+</header>
+
+<section class="breadcrumb-bar">
+  <div class="wrap-inner">
+    <a class="ghost-link" th:href="@{/llm-indexer/}">&larr; Back home</a>
+  </div>
+</section>
+
+<main class="wrap">
+  <h1 style="font-size:1.6rem; font-weight:700; margin:0 0 0.5rem;">Documentation</h1>
+  <p class="section-intro" style="margin-bottom:2rem;">How llm-index is built, how to install and configure it,
+    and every CLI command and HTTP route it exposes — the full reference.</p>
+
+  <div class="card">
+    <span class="corner-square"></span>
+    <ul class="toc">
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#architecture">Architecture — how it's built</a></li>
+      <li><a href="#installation">Installation</a></li>
+      <li><a href="#configuration">Configuration (application.properties)</a></li>
+      <li><a href="#cli">CLI reference</a></li>
+      <li><a href="#api">HTTP API reference</a></li>
+      <li><a href="#embedding">Embedding as a library</a></li>
+      <li><a href="#deployment">Deployment</a></li>
+    </ul>
+  </div>
+
+  <div class="doc-section" id="overview">
+    <h2>Overview</h2>
+    <p>llm-index turns a Java codebase into an LLM-friendly index: a directory tree, class/method skeletons,
+      a dependency list, and a queryable SQLite knowledge graph. The whole repo gets parsed once; after that,
+      a query for a class or keyword returns only the matching file:line references — typically under 10% of
+      a file's raw code — instead of dumping the whole repo into a prompt.</p>
+    <p>It ships as a single jar with three front doors onto the same engine: a CLI, a web app, and a Maven
+      library you can embed in your own Spring Boot app.</p>
+  </div>
+
+  <div class="doc-section" id="architecture">
+    <h2>Architecture — how it's built</h2>
+    <p class="section-intro">One shared indexing engine, three ways to reach it. Everything under
+      <code>com.llm.indexer</code>:</p>
+
+    <div class="card">
+      <span class="corner-square"></span>
+      <ul class="arch-list">
+        <li><code>core/</code><span>TreeBuilder, SkeletonBuilder, DepsBuilder, GraphStore, Hashes, and IndexService — the engine. JavaParser walks every <code>.java</code> file; IndexService orchestrates the rest and is the single entry point both the CLI and web app call.</span></li>
+        <li><code>query/</code><span>QueryService — graph traversal (matches, used-by, outward call chain via a recursive SQL CTE) shared by the CLI's <code>query</code> command and the web app's Query tab.</span></li>
+        <li><code>viz/</code><span>GraphVisualizer — renders graph.db as a self-contained interactive HTML page (vis-network via CDN), shared by <code>indexer visualize</code> and the web app's Graph tab.</span></li>
+        <li><code>cli/</code><span>CliRoot, BuildCommand, QueryCommand, VisualizeCommand — a picocli command tree. Runs with no Spring context at all, for fast startup.</span></li>
+        <li><code>web/</code><span>WebController, IndexJobService, GitCloner, StartupIndexRunner/Properties, WebMvcConfig — Spring MVC + Thymeleaf. Manages job lifecycle (clone, index, evict) and everything under <code>/llm-indexer/**</code>.</span></li>
+      </ul>
+    </div>
+
+    <p style="margin-top:1.25rem;">A single <code>IndexerApplication.main()</code> decides which front door to use: if the
+      first argument is <code>build</code>, <code>query</code>, or <code>visualize</code>, it runs the picocli
+      command tree directly and exits — no web server, no Spring Boot startup cost. Otherwise it boots the full
+      Spring Boot web app.</p>
+
+    <p>Data flow for a build: JavaParser parses each file &rarr; TreeBuilder/SkeletonBuilder/DepsBuilder produce
+      the three markdown views &rarr; DepsBuilder also writes typed nodes (<code>Class</code>/<code>Method</code>/<code>Endpoint</code>)
+      and edges (<code>CONTAINS</code>/<code>USES</code>/<code>CALLS</code>/<code>EXPOSES</code>) into
+      <code>graph.db</code> via GraphStore. A SHA-256 hash cache (<code>state.json</code>) means rebuilds only
+      re-parse files that actually changed.</p>
+  </div>
+
+  <div class="doc-section" id="installation">
+    <h2>Installation</h2>
+
+    <h3 class="ref-subhead">CLI</h3>
+    <div class="card">
+      <span class="corner-square"></span>
+      <pre><code>./mvnw -q -DskipTests clean package
+java -jar target/llm-index-exec.jar build .</code></pre>
+    </div>
+    <p class="option-foot">Or grab a prebuilt jar from the
+      <a href="https://github.com/Heeneth12/llm-indexer/releases" target="_blank" rel="noopener">Releases page</a> instead of building it.</p>
+
+    <h3 class="ref-subhead">Maven / JitPack</h3>
+    <div class="card">
+      <span class="corner-square"></span>
+      <pre><code>&lt;repositories&gt;
+  &lt;repository&gt;
+    &lt;id&gt;jitpack.io&lt;/id&gt;
+    &lt;url&gt;https://jitpack.io&lt;/url&gt;
+  &lt;/repository&gt;
+&lt;/repositories&gt;
+
+&lt;dependency&gt;
+  &lt;groupId&gt;com.github.Heeneth12&lt;/groupId&gt;
+  &lt;artifactId&gt;llm-indexer&lt;/artifactId&gt;
+  &lt;version&gt;v0.7.0&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+    </div>
+    <p class="option-foot">Resolves to the plain <code>llm-index.jar</code> (not the executable one) — normal
+      classpath, works like any library. See <a href="#embedding">Embedding as a library</a> below for the
+      Spring wiring it needs.</p>
+
+    <h3 class="ref-subhead">Docker</h3>
+    <div class="card">
+      <span class="corner-square"></span>
+      <pre><code>docker build -t llm-indexer .
+docker run -p 8080:8080 llm-indexer</code></pre>
+    </div>
+  </div>
+
+  <div class="doc-section" id="configuration">
+    <h2>Configuration (application.properties)</h2>
+    <p class="section-intro">Auto-index a repo on boot — no CLI command, no pasting a URL. Every property below
+      is prefixed <code>llm-index.startup.</code></p>
+
+    <div class="card">
+      <span class="corner-square"></span>
+      <div style="overflow-x:auto;">
+        <table class="ref-table">
+          <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          <tr>
+            <td><code>enabled</code></td>
+            <td>boolean</td>
+            <td><code>false</code></td>
+            <td class="desc">Master switch. Nothing else in this table does anything unless this is <code>true</code>.</td>
+          </tr>
+          <tr>
+            <td><code>path</code></td>
+            <td>String</td>
+            <td>—</td>
+            <td class="desc">A local directory already on disk (e.g. a mounted volume) to index on boot.</td>
+          </tr>
+          <tr>
+            <td><code>repo-url</code></td>
+            <td>String</td>
+            <td>—</td>
+            <td class="desc">Alternative to <code>path</code>: a git URL, cloned on first boot and fast-forward pulled on later restarts.</td>
+          </tr>
+          <tr>
+            <td><code>work-dir</code></td>
+            <td>String</td>
+            <td>system temp dir</td>
+            <td class="desc">Where to clone <code>repo-url</code> into. Only used with <code>repo-url</code>, not <code>path</code>.</td>
+          </tr>
+          <tr>
+            <td><code>full</code></td>
+            <td>boolean</td>
+            <td><code>false</code></td>
+            <td class="desc">Force a full re-parse every run, ignoring the SHA-256 change cache.</td>
+          </tr>
+          <tr>
+            <td><code>reindex-on-restart</code></td>
+            <td>boolean</td>
+            <td><code>true</code></td>
+            <td class="desc">If <code>false</code> and an index already exists from a previous run, reuse it instead of rebuilding.</td>
+          </tr>
+          <tr>
+            <td><code>graph-visualization-enabled</code></td>
+            <td>boolean</td>
+            <td><code>false</code></td>
+            <td class="desc">Also write <code>.llm-index/graph.html</code> (same output as <code>indexer visualize</code>) after each run.</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <p style="margin-top:1.25rem;">Example — auto-index a mounted repo, reindex every restart, and keep a
+      graph.html on disk:</p>
+    <div class="card">
+      <span class="corner-square"></span>
+      <pre><code>llm-index.startup.enabled=true
+llm-index.startup.path=/data/my-repo
+llm-index.startup.full=false
+llm-index.startup.reindex-on-restart=true
+llm-index.startup.graph-visualization-enabled=true</code></pre>
+    </div>
+    <p class="option-foot">Once configured, the result is always at <code>/llm-indexer/jobs/startup</code> and
+      linked from the landing page. That job is exempt from the normal 30-minute eviction, and its directory is
+      never auto-deleted — safe to point <code>path</code> at a real working repo.</p>
+  </div>
+
+  <div class="doc-section" id="cli">
+    <h2>CLI reference</h2>
+    <div class="card">
+      <span class="corner-square"></span>
+      <div style="overflow-x:auto;">
+        <table class="ref-table">
+          <tr><th>Command</th><th>Options</th><th>Description</th></tr>
+          <tr>
+            <td><code>build [path]</code></td>
+            <td><code>-o, --out &lt;dir&gt;</code> (default <code>.llm-index</code>)<br/><code>--full</code></td>
+            <td class="desc"><code>path</code> defaults to the current directory. Indexes the project: tree,
+              skeletons, dependencies, and the graph. <code>--full</code> forces a complete re-parse, ignoring
+              the incremental cache.</td>
+          </tr>
+          <tr>
+            <td><code>query &lt;term&gt;</code></td>
+            <td><code>-d, --dir &lt;dir&gt;</code> (default <code>.llm-index</code>)<br/><code>--hops &lt;n&gt;</code> (default <code>3</code>)</td>
+            <td class="desc">Searches the graph for a class or keyword. Prints and writes <code>context.md</code>
+              with matching code, what uses it, and its outward call chain up to <code>--hops</code> deep.</td>
+          </tr>
+          <tr>
+            <td><code>visualize</code></td>
+            <td><code>-d, --dir &lt;dir&gt;</code> (default <code>.llm-index</code>)<br/><code>--filter &lt;term&gt;</code><br/><code>--hops &lt;n&gt;</code><br/><code>--no-open</code></td>
+            <td class="desc">Generates <code>.llm-index/graph.html</code> and opens it, unless <code>--no-open</code>
+              is set. <code>--filter</code> scopes to matching nodes; add <code>--hops</code> to also pull in
+              nodes within N hops via CALLS/USES.</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <p class="option-foot">All three commands run without booting a web server or Spring context — the CLI is
+      dispatched directly in <code>IndexerApplication.main()</code> when the first argument matches one of them.</p>
+  </div>
+
+  <div class="doc-section" id="api">
+    <h2>HTTP API reference</h2>
+    <p class="section-intro">Base path: <code>/llm-indexer</code> — everything (pages, CSS, API) lives under this
+      one prefix, deliberately, so it can't collide with a host app's own routes when embedded as a library.</p>
+
+    <div class="card">
+      <span class="corner-square"></span>
+      <div style="overflow-x:auto;">
+        <table class="ref-table">
+          <tr><th>Route</th><th>Params</th><th>Description</th><th>Example</th></tr>
+          <tr>
+            <td><span class="http-method get">GET</span><code>/llm-indexer/</code></td>
+            <td class="desc">—</td>
+            <td class="desc">Landing page: paste-a-URL form, plus a link to the configured startup job if one exists.</td>
+            <td class="desc"><code>curl localhost:8080/llm-indexer/</code></td>
+          </tr>
+          <tr>
+            <td><span class="http-method get">GET</span><code>/llm-indexer/docs</code></td>
+            <td class="desc">—</td>
+            <td class="desc">This page.</td>
+            <td class="desc">—</td>
+          </tr>
+          <tr>
+            <td><span class="http-method post">POST</span><code>/llm-indexer/index</code></td>
+            <td><code>repoUrl</code></td>
+            <td class="desc">Clones and indexes a public git repo, then redirects to its job page.</td>
+            <td class="desc"><code>curl -d repoUrl=https://github.com/o/r.git localhost:8080/llm-indexer/index</code></td>
+          </tr>
+          <tr>
+            <td><span class="http-method get">GET</span><code>/llm-indexer/jobs/{id}</code></td>
+            <td class="desc">—</td>
+            <td class="desc">Job status and results: Tree / Skeleton / Dependencies / Graph / Query tabs.</td>
+            <td class="desc"><code>curl localhost:8080/llm-indexer/jobs/startup</code></td>
+          </tr>
+          <tr>
+            <td><span class="http-method post">POST</span><code>/llm-indexer/jobs/{id}/query</code></td>
+            <td><code>term</code>, <code>hops</code> (default <code>3</code>)</td>
+            <td class="desc">Runs a graph query and re-renders the job page with matches, impact, and call chain.</td>
+            <td class="desc"><code>curl -d term=OrderService -d hops=2 .../jobs/{id}/query</code></td>
+          </tr>
+          <tr>
+            <td><span class="http-method get">GET</span><code>/llm-indexer/jobs/{id}/graph</code></td>
+            <td><code>filter</code>, <code>hops</code> (optional)</td>
+            <td class="desc">The interactive graph as a standalone HTML page — what the Graph tab embeds via iframe.</td>
+            <td class="desc"><code>curl ".../jobs/{id}/graph?filter=Order&amp;hops=2"</code></td>
+          </tr>
+          <tr>
+            <td><span class="http-method get">GET</span><code>/llm-indexer/jobs/{id}/file</code></td>
+            <td><code>path</code>, <code>line</code> (optional)</td>
+            <td class="desc">Source file viewer, jumping straight to and highlighting the given line.</td>
+            <td class="desc"><code>curl ".../jobs/{id}/file?path=src/.../X.java&amp;line=42"</code></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="doc-section" id="embedding">
+    <h2>Embedding as a library</h2>
+    <p>llm-index's Spring beans (<code>StartupIndexRunner</code>, <code>IndexJobService</code>, and the web UI's
+      <code>WebController</code>) live in <code>com.llm.indexer.web</code> — a different package tree than your
+      own <code>@SpringBootApplication</code> class, so Spring's default component scan (rooted at your app's
+      own package) won't discover them on its own. Point it there explicitly:</p>
+    <div class="card">
+      <span class="corner-square"></span>
+      <pre><code>@SpringBootApplication
+@ComponentScan(basePackages = {"your.own.package", "com.llm.indexer.web"})
+@ConfigurationPropertiesScan(basePackages = "com.llm.indexer.web")
+public class YourApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(YourApplication.class, args);
+    }
+}</code></pre>
+    </div>
+    <p class="option-foot">With that in place, <code>llm-index.startup.*</code> properties work exactly as
+      documented above, and the full UI mounts at <code>/llm-indexer/**</code> in your app. It's safe alongside
+      your own routes and static assets since everything is namespaced under that one prefix — nothing to
+      exclude, nothing to reconfigure.</p>
+  </div>
+
+  <div class="doc-section" id="deployment">
+    <h2>Deployment</h2>
+    <p>The image is a plain container that listens on <code>$PORT</code> (defaults to <code>8080</code>), so it
+      runs on anything that runs a container — Render, Fly.io, Railway, a VPS behind Docker/nginx, and so on.
+      No database is required; job state is in-memory and ephemeral by design (except a startup-configured job,
+      which is permanent and never evicted). Push the repo (or just the built image), point your host at the
+      <code>Dockerfile</code>, and set <code>PORT</code> if the platform requires a specific one.</p>
+  </div>
+</main>
+
+<footer class="footer-dark">
+  <div class="footer-inner">
+    Java codebases only, for now. Source: <code>com.llm.indexer</code>.
+  </div>
+</footer>
+</body>
+</html>

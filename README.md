@@ -10,6 +10,9 @@ Ships as one jar, two ways to use it:
 - **Web app** — paste a git URL, get back a browsable, searchable index. Deployable
   as a hosted service for other people to use.
 
+Full reference (architecture, every config property, every CLI command, every HTTP route) is
+also available in-app at `/llm-indexer/docs` once the web app is running.
+
 ## CLI
 
 ```bash

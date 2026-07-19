@@ -51,6 +51,11 @@ public class WebController {
         return "redirect:" + BASE + "/jobs/" + id;
     }
 
+    @GetMapping("/docs")
+    public String docs() {
+        return "docs";
+    }
+
     @GetMapping("/jobs/{id}")
     public String viewJob(@PathVariable String id, Model model) {
         IndexJob job = jobOrNotFound(id);
