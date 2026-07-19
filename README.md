@@ -1,5 +1,8 @@
 # llm-index
 
+<img width="2266" height="1556" alt="image" src="https://github.com/user-attachments/assets/affbbce9-f437-4157-9489-25f0662a3831" />
+
+
 Turns a Java codebase into an LLM-friendly index — a directory tree, class/method
 skeletons, a dependency list, and a queryable SQLite knowledge graph — so an LLM
 (or you) can find the relevant code without reading the whole repo.
