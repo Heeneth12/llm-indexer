@@ -4,6 +4,7 @@ import com.llm.indexer.core.IndexResult;
 import com.llm.indexer.core.IndexService;
 import com.llm.indexer.query.QueryResult;
 import com.llm.indexer.query.QueryService;
+import com.llm.indexer.viz.GraphVisualizer;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,14 +74,15 @@ public class IndexJobService {
      * the TTL sweep and shutdown cleanup never touch it or delete its directory — root
      * may be the caller's own real repo, not a disposable clone.
      */
-    public void registerAndRunPermanentJob(String id, String label, Path root, boolean full, boolean reindexOnRestart) {
+    public void registerAndRunPermanentJob(String id, String label, Path root, boolean full,
+                                            boolean reindexOnRestart, boolean generateGraphHtml) {
         IndexJob job = new IndexJob(id, label, root);
         job.setPermanent(true);
         jobs.put(id, job);
-        executor.submit(() -> runPermanentJob(job, full, reindexOnRestart));
+        executor.submit(() -> runPermanentJob(job, full, reindexOnRestart, generateGraphHtml));
     }
 
-    private void runPermanentJob(IndexJob job, boolean full, boolean reindexOnRestart) {
+    private void runPermanentJob(IndexJob job, boolean full, boolean reindexOnRestart, boolean generateGraphHtml) {
         job.setStatus(IndexJob.Status.RUNNING);
         try {
             Path outDir = job.getTempDir().resolve(".llm-index");
@@ -90,6 +92,12 @@ public class IndexJobService {
             IndexResult result = (alreadyIndexed && !reindexOnRestart)
                     ? IndexService.loadExisting(outDir)
                     : IndexService.build(job.getTempDir(), outDir, full);
+
+            if (generateGraphHtml) {
+                Path graphHtml = outDir.resolve("graph.html");
+                Files.writeString(graphHtml, GraphVisualizer.render(result.dbPath(), null, null));
+                log.info("Wrote graph visualization to {}", graphHtml);
+            }
 
             job.setResult(result);
             job.setStatus(IndexJob.Status.DONE);

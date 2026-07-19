@@ -103,7 +103,13 @@ llm-index.startup.work-dir=/data/llm-index-clone
 
 llm-index.startup.full=false               # force a full re-parse every run
 llm-index.startup.reindex-on-restart=true  # false = reuse the existing index instead of rebuilding
+
+llm-index.startup.graph-visualization-enabled=true  # also write .llm-index/graph.html each run
 ```
+
+With `graph-visualization-enabled=true`, `.llm-index/graph.html` is generated on every run alongside
+the markdown files — a static file you can open directly, in addition to the Graph tab at
+`/jobs/startup`.
 
 Once configured, the result is always at `/jobs/startup` and linked from the landing page.
 This job is exempt from the 30-minute eviction that normal paste-a-URL jobs get, and its

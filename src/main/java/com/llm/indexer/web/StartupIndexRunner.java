@@ -62,9 +62,10 @@ public class StartupIndexRunner {
                 label = props.getRepoUrl();
             }
 
-            log.info("Starting config-driven index of {} (full={}, reindexOnRestart={})",
-                    label, props.isFull(), props.isReindexOnRestart());
-            jobService.registerAndRunPermanentJob(STARTUP_JOB_ID, label, root, props.isFull(), props.isReindexOnRestart());
+            log.info("Starting config-driven index of {} (full={}, reindexOnRestart={}, graphVisualization={})",
+                    label, props.isFull(), props.isReindexOnRestart(), props.isGraphVisualizationEnabled());
+            jobService.registerAndRunPermanentJob(STARTUP_JOB_ID, label, root, props.isFull(),
+                    props.isReindexOnRestart(), props.isGraphVisualizationEnabled());
         } catch (Exception e) {
             log.error("Startup indexing failed", e);
         }

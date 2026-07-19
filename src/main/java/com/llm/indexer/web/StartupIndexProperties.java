@@ -28,6 +28,9 @@ public class StartupIndexProperties {
     /** If false, and an index already exists from a previous run, reuse it instead of rebuilding. */
     private boolean reindexOnRestart = true;
 
+    /** If true, also write .llm-index/graph.html (same output as `indexer visualize`) after each run. */
+    private boolean graphVisualizationEnabled = false;
+
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
 
@@ -45,4 +48,7 @@ public class StartupIndexProperties {
 
     public boolean isReindexOnRestart() { return reindexOnRestart; }
     public void setReindexOnRestart(boolean reindexOnRestart) { this.reindexOnRestart = reindexOnRestart; }
+
+    public boolean isGraphVisualizationEnabled() { return graphVisualizationEnabled; }
+    public void setGraphVisualizationEnabled(boolean graphVisualizationEnabled) { this.graphVisualizationEnabled = graphVisualizationEnabled; }
 }
