@@ -1,0 +1,6 @@
+target/
+.llm-index/
+.git/
+.idea/
+.vscode/
+*.iml

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>llm-index</title>
+  <link rel="stylesheet" th:href="@{/style.css}" />
+</head>
+
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a class="wordmark" th:href="@{/}"><span class="wordmark-dot"></span>llm-index</a>
+    </div>
+  </header>
+
+  <section class="hero-dark">
+    <div class="hero-inner">
+      <h1>A local knowledge graph index for your repo</h1>
+      <p>Directory tree, class/method skeletons, dependencies, and a queryable graph —
+        built so an LLM (or you) can find the right code without reading the whole repo.</p>
+    </div>
+  </section>
+
+  <main class="wrap">
+    <div class="error" th:if="${error}" th:text="${error}"></div>
+
+    <div class="feature-row">
+      <div class="card feature-card">
+        <span class="corner-square"></span>
+        <div class="feature-icon">01</div>
+        <h3>Context-window friendly</h3>
+        <p>Generates targeted markdown — skeletons and call chains, not the whole repo — so you paste less into a
+          prompt.</p>
+      </div>
+      <div class="card feature-card">
+        <span class="corner-square"></span>
+        <div class="feature-icon">02</div>
+        <h3>Queryable dependency graph</h3>
+        <p>Maps what a class uses and what uses it, so you can see the blast radius of a change before you make it.</p>
+      </div>
+      <div class="card feature-card">
+        <span class="corner-square"></span>
+        <div class="feature-icon">03</div>
+        <h3>Zero-config for Java</h3>
+        <p>Works out of the box on Java 21+ / Maven projects. Run it locally via CLI or use the browser version below.
+        </p>
+      </div>
+    </div>
+
+    <h2 class="section-label">How it works</h2>
+    <p class="section-intro">Four steps, no configuration: point it at code, it parses every file,
+      writes the index, then you search it.</p>
+
+    <div class="step-row">
+      <div class="card step-card">
+        <span class="corner-square"></span>
+        <div class="feature-icon">01</div>
+        <h3>Point it at code</h3>
+        <p>Run the CLI against a local project, or paste a git URL into the browser version above.</p>
+      </div>
+      <div class="card step-card">
+        <span class="corner-square"></span>
+        <div class="feature-icon">02</div>
+        <h3>Parse every file</h3>
+        <p>JavaParser walks each <code>.java</code> file and extracts classes, fields, methods, and Spring annotations.</p>
+      </div>
+      <div class="card step-card">
+        <span class="corner-square"></span>
+        <div class="feature-icon">03</div>
+        <h3>Build the index</h3>
+        <p>Writes tree/skeleton/dependency markdown plus a SQLite graph of USES, CALLS, CONTAINS, and EXPOSES edges.</p>
+      </div>
+      <div class="card step-card">
+        <span class="corner-square"></span>
+        <div class="feature-icon">04</div>
+        <h3>Query it</h3>
+        <p>Search a class or keyword and get matches, what depends on it, and its outward call chain — ready to paste into an LLM.</p>
+      </div>
+    </div>
+
+    <h2 class="section-label">Example output</h2>
+    <p class="section-intro">Querying <code>OrderService</code> after indexing returns something like this — small
+      enough to paste directly into a prompt.</p>
+
+    <div class="card">
+      <span class="corner-square"></span>
+      <pre><code># Context for: OrderService
+
+## Matching code
+- OrderService (src/main/java/.../service/OrderService.java:14)
+
+## Used by (impact if changed)
+- OrderController
+- OrderScheduler
+
+## Calls outward from here
+  PaymentClient
+  InventoryService.reserve
+
+## Instructions
+Read only the files listed above. Start at the file:line refs.</code></pre>
+    </div>
+
+    <h2 class="section-label">What you get</h2>
+    <p class="section-intro">Every build writes these into <code>.llm-index/</code> next to your project.</p>
+
+    <div class="card">
+      <span class="corner-square"></span>
+      <ul class="spec-list">
+        <li><code>01-tree.md</code><span>Directory structure, filtered to source files</span></li>
+        <li><code>02-skeleton.md</code><span>Every class's fields and method signatures, with line numbers</span></li>
+        <li><code>03-dependencies.md</code><span>Which classes use which — a flat dependency list</span></li>
+        <li><code>graph.db</code><span>SQLite knowledge graph (nodes/edges) you can query repeatedly</span></li>
+        <li><code>context.md</code><span>Written on each query — matches, impact, and call chain for one term</span></li>
+        <li><code>INSTRUCTIONS.md</code><span>Tells the LLM how to read the rest, so it doesn't ingest the whole repo</span></li>
+      </ul>
+    </div>
+
+    <h2 class="section-label">Get started</h2>
+
+    <div class="options">
+
+      <div class="card option">
+        <span class="corner-square"></span>
+        <div class="option-head">
+          <span class="option-icon" aria-hidden="true">&gt;_</span>
+          <h3 class="option-title">Run it locally</h3>
+        </div>
+        <p class="option-desc">Have Maven and Java 21+? Build the jar and point it at any
+          project on your machine. The index is written straight into that project's
+          <code>.llm-index/</code> folder.
+        </p>
+
+        <div class="codeblock">
+          <button class="btn-outline copy-btn" type="button" data-copy-target="local-cmds">Copy</button>
+          <pre id="local-cmds"><code>./mvnw -q -DskipTests clean package
+java -jar target/indexer-*.jar build .
+java -jar target/indexer-*.jar query MyClassName</code></pre>
+        </div>
+        <p class="option-foot">First command builds it, second indexes the current directory,
+          third searches the graph and writes <code>context.md</code>.</p>
+      </div>
+
+      <div class="card option">
+        <span class="corner-square"></span>
+        <div class="option-head">
+          <span class="option-icon" aria-hidden="true">&#8942;&#8942;</span>
+          <h3 class="option-title">Or point us at a repo</h3>
+        </div>
+        <p class="option-desc">No local setup needed. Paste a public git URL and we'll clone
+          it, index it here, and give you a browsable, searchable result.</p>
+
+        <form class="form-row option-form" method="post" th:action="@{/index}">
+          <input type="text" name="repoUrl" placeholder="https://github.com/owner/repo.git" required />
+          <button type="submit">Index this repo</button>
+        </form>
+        <p class="option-foot">Only http(s) URLs are accepted. Repos are cloned to a temporary
+          workspace and discarded after 30 minutes.</p>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="footer-dark">
+    <div class="footer-inner">
+      Java codebases only, for now. Source: <code>com.llm.indexer</code>.
+    </div>
+  </footer>
+
+  <script th:inline="javascript">
+    document.querySelectorAll('.copy-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var target = document.getElementById(btn.getAttribute('data-copy-target'));
+        navigator.clipboard.writeText(target.innerText).then(function () {
+          var original = btn.textContent;
+          btn.textContent = 'Copied';
+          setTimeout(function () { btn.textContent = original; }, 1500);
+        });
+      });
+    });
+  </script>
+</body>
+
+</html>

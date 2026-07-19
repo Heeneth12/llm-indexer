@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title th:text="${path}">file</title>
+  <link rel="stylesheet" th:href="@{/style.css}"/>
+</head>
+<body>
+<header class="nav">
+  <div class="nav-inner">
+    <a class="wordmark" th:href="@{/}"><span class="wordmark-dot"></span>llm-index</a>
+  </div>
+</header>
+
+<section class="breadcrumb-bar">
+  <div class="wrap-inner">
+    <a class="ghost-link" th:href="@{/jobs/{id}(id=${job.id})}">&larr; Back to job</a>
+  </div>
+</section>
+
+<main class="wrap">
+  <h1 class="file-path" th:text="${path}"></h1>
+
+  <div class="card code-card">
+    <span class="corner-square"></span>
+    <pre style="border:none;background:none;margin:0;"><code><div class="file-line" th:each="line, iter : ${lines}" th:classappend="${iter.count == highlightLine} ? 'hl' : ''"><span class="ln" th:text="${iter.count}"></span><span th:text="${line}"></span></div></code></pre>
+  </div>
+</main>
+
+<footer class="footer-dark">
+  <div class="footer-inner">llm-index</div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title th:text="'llm-index — ' + ${job.id}">llm-index</title>
+  <meta th:if="${job.status.name() == 'PENDING' or job.status.name() == 'RUNNING'}" http-equiv="refresh" content="2"/>
+  <link rel="stylesheet" th:href="@{/style.css}"/>
+  <th:block th:if="${job.status.name() == 'DONE'}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css"/>
+  </th:block>
+</head>
+<body>
+<header class="nav">
+  <div class="nav-inner">
+    <a class="wordmark" th:href="@{/}"><span class="wordmark-dot"></span>llm-index</a>
+  </div>
+</header>
+
+<section class="breadcrumb-bar">
+  <div class="wrap-inner">
+    <a class="ghost-link" th:href="@{/}">&larr; New index</a>
+  </div>
+</section>
+
+<main class="wrap">
+  <div class="job-meta-row">
+    <h1 class="job-repo" th:text="${job.repoUrl}"></h1>
+    <span class="badge-tag" th:classappend="${job.status}" th:text="${job.status}"></span>
+  </div>
+
+  <div class="card" th:if="${job.status.name() == 'PENDING' or job.status.name() == 'RUNNING'}">
+    <span class="corner-square"></span>
+    <p style="margin:0;">Cloning and indexing this repository… this page refreshes automatically every couple of seconds.</p>
+  </div>
+
+  <div class="error" th:if="${job.status.name() == 'FAILED'}" th:text="${job.errorMessage}"></div>
+
+  <div class="tabs" th:if="${job.status.name() == 'DONE'}">
+    <input type="radio" name="tabs" id="tab-tree" checked="checked"/>
+    <input type="radio" name="tabs" id="tab-skeleton"/>
+    <input type="radio" name="tabs" id="tab-deps"/>
+    <input type="radio" name="tabs" id="tab-query"/>
+
+    <div class="tab-labels">
+      <label for="tab-tree">Tree</label>
+      <label for="tab-skeleton">Skeleton</label>
+      <label for="tab-deps">Dependencies</label>
+      <label for="tab-query">Query</label>
+    </div>
+
+    <div class="panels">
+      <div id="panel-tree" class="tab-panel">
+        <pre><code class="language-markdown" th:text="${job.result.treeMd}"></code></pre>
+      </div>
+
+      <div id="panel-skeleton" class="tab-panel">
+        <pre><code class="language-markdown" th:text="${job.result.skeletonMd}"></code></pre>
+      </div>
+
+      <div id="panel-deps" class="tab-panel">
+        <pre><code class="language-markdown" th:text="${job.result.depsMd}"></code></pre>
+      </div>
+
+      <div id="panel-query" class="tab-panel">
+        <form class="form-row" method="post" th:action="@{/jobs/{id}/query(id=${job.id})}" style="margin-bottom: 1.25rem;">
+          <input type="text" name="term" placeholder="Class name or keyword" th:value="${term}" required/>
+          <input type="number" name="hops" min="1" max="8" value="3" style="max-width:5em;" title="traversal depth"/>
+          <button type="submit">Search</button>
+        </form>
+
+        <div class="error" th:if="${queryError}" th:text="${queryError}"></div>
+
+        <div th:if="${queryResult}">
+          <h3>Matching code</h3>
+          <ul class="result-list">
+            <li th:each="m : ${queryResult.matches}">
+              <a th:href="@{/jobs/{id}/file(id=${job.id}, path=${m.filePath}, line=${m.line})}"
+                 th:text="${m.name} + ' (' + ${m.filePath} + ':' + ${m.line} + ')'"></a>
+              <span style="color:var(--mute);font-size:0.8rem;font-weight:400;" th:text="' — ' + ${m.type}"></span>
+            </li>
+          </ul>
+          <p th:if="${#lists.isEmpty(queryResult.matches)}" style="color:var(--mute)">No matches.</p>
+
+          <h3>Used by (impact if changed)</h3>
+          <ul class="result-list">
+            <li th:each="u : ${queryResult.usedBy}" th:text="${u}"></li>
+          </ul>
+          <p th:if="${#lists.isEmpty(queryResult.usedBy)}" style="color:var(--mute)">Nothing references this.</p>
+
+          <h3>Calls outward from here</h3>
+          <ul class="result-list">
+            <li th:each="c : ${queryResult.callChain}" th:text="${'  '.repeat(c.depth)} + ${c.name}"></li>
+          </ul>
+          <p th:if="${#lists.isEmpty(queryResult.callChain)}" style="color:var(--mute)">No outward calls found.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="footer-dark">
+  <div class="footer-inner">
+    <span th:if="${job.status.name() == 'DONE'}" th:text="${job.result.filesTotal} + ' Java files indexed'"></span>
+    <span th:unless="${job.status.name() == 'DONE'}">llm-index</span>
+  </div>
+</footer>
+
+<script th:if="${job.status.name() == 'DONE'}">hljs.highlightAll();</script>
+</body>
+</html>
