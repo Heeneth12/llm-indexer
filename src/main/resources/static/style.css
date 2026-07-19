@@ -308,6 +308,117 @@ code {
   }
 }
 
+/* ---------- Compare panels (without / with) ---------- */
+.compare-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 3rem;
+}
+
+@media (max-width: 720px) {
+  .compare-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.compare-card {
+  background: var(--surface-soft);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+
+.compare-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.compare-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.compare-card.without .compare-dot {
+  background: var(--error);
+}
+
+.compare-card.with .compare-dot {
+  background: var(--primary);
+}
+
+.compare-card ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.88rem;
+  color: var(--body-c);
+}
+
+.compare-card li {
+  margin-bottom: 0.55rem;
+}
+
+.compare-card li:last-child {
+  margin-bottom: 0;
+}
+
+/* ---------- Edge list (graph model diagram) ---------- */
+.edge-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.edge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.edge-row:last-child {
+  border-bottom: none;
+}
+
+.node-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 0.3rem 0.6rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  color: var(--ink);
+}
+
+.node-chip .node-type {
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.edge-arrow {
+  color: var(--mute);
+  font-weight: 700;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
 /* ---------- Cards ---------- */
 .card {
   position: relative;
@@ -639,4 +750,85 @@ h3 {
 
 .file-line.hl .ln {
   color: var(--primary);
+}
+
+/* ---------- Hero tool chips ---------- */
+.hero-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.tool-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius);
+  color: var(--on-dark);
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* ---------- Token savings bars ---------- */
+.token-compare {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.token-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.token-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mute);
+}
+
+.token-bar-track {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 3px;
+}
+
+.token-bar {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  padding: 0 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: var(--radius);
+  white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.token-bar.full {
+  background: var(--hairline);
+  color: var(--body-c);
+}
+
+.token-bar.lean {
+  background: var(--primary);
+  color: var(--on-primary);
+  flex-shrink: 0;
+}
+
+.token-bar-note {
+  font-size: 0.78rem;
+  color: var(--mute);
+  font-weight: 700;
 }

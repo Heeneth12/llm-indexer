@@ -17,9 +17,19 @@
 
   <section class="hero-dark">
     <div class="hero-inner">
-      <h1>A local knowledge graph index for your repo</h1>
-      <p>Directory tree, class/method skeletons, dependencies, and a queryable graph —
-        built so an LLM (or you) can find the right code without reading the whole repo.</p>
+      <h1>Feed your AI agent only the code that matters</h1>
+      <p>Works with any LLM or coding agent — Claude Code, Cursor, Copilot, Aider,
+        or plain chat. llm-index turns your repo into a queryable knowledge graph,
+        so the agent gets exact file:line context — typically under 10% of the raw
+        code — and edits exactly the right spot, nothing else.</p>
+      <div class="hero-tools">
+        <span class="tool-chip">Claude Code</span>
+        <span class="tool-chip">Cursor</span>
+        <span class="tool-chip">GitHub Copilot</span>
+        <span class="tool-chip">Aider</span>
+        <span class="tool-chip">Windsurf</span>
+        <span class="tool-chip">Any chat LLM</span>
+      </div>
     </div>
   </section>
 
@@ -49,6 +59,32 @@
       </div>
     </div>
 
+    <h2 class="section-label">Why paste 1,200 lines for a 40-line change?</h2>
+    <p class="section-intro">Say a file has 1,200 lines but the change only touches one
+      40-line method. Pasting the whole file wastes ~97% of those tokens — and buries
+      the part that matters. llm-index sends the agent just that method, its callers,
+      and its call chain. Same understanding, a fraction of the context, and the edit
+      lands on the exact lines.</p>
+
+    <div class="card">
+      <span class="corner-square"></span>
+      <div class="token-compare">
+        <div class="token-row">
+          <span class="token-label">Whole file in the prompt</span>
+          <div class="token-bar-track">
+            <div class="token-bar full" style="width: 100%;">1,200 lines &middot; 100% of tokens</div>
+          </div>
+        </div>
+        <div class="token-row">
+          <span class="token-label">With llm-index</span>
+          <div class="token-bar-track">
+            <div class="token-bar lean" style="width: 9%;"></div>
+            <span class="token-bar-note">~40 lines &middot; under 10% — the method, its callers, its call chain</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <h2 class="section-label">How it works</h2>
     <p class="section-intro">Four steps, no configuration: point it at code, it parses every file,
       writes the index, then you search it.</p>
@@ -64,7 +100,8 @@
         <span class="corner-square"></span>
         <div class="feature-icon">02</div>
         <h3>Parse every file</h3>
-        <p>JavaParser walks each <code>.java</code> file and extracts classes, fields, methods, and Spring annotations.</p>
+        <p>JavaParser walks each <code>.java</code> file and extracts classes, fields, methods, and Spring annotations.
+        </p>
       </div>
       <div class="card step-card">
         <span class="corner-square"></span>
@@ -76,13 +113,127 @@
         <span class="corner-square"></span>
         <div class="feature-icon">04</div>
         <h3>Query it</h3>
-        <p>Search a class or keyword and get matches, what depends on it, and its outward call chain — ready to paste into an LLM.</p>
+        <p>Search a class or keyword and get matches, what depends on it, and its outward call chain — ready to paste
+          into an LLM.</p>
       </div>
     </div>
 
+    <h2 class="section-label">Precision over volume</h2>
+    <p class="section-intro">The whole repo gets parsed and indexed — nothing is skipped. But a query only ever
+      returns the exact file:line references that matter, not the repo itself. That's what keeps the result small
+      enough to actually paste into a prompt.</p>
+
+    <div class="compare-row">
+      <div class="compare-card without">
+        <div class="compare-head"><span class="compare-dot"></span>Without an index</div>
+        <ul>
+          <li>A 1,200-line file goes into the prompt for a 40-line fix</li>
+          <li>~97% of those tokens are noise the model must skip past</li>
+          <li>The agent guesses which part to edit — and sometimes touches code it shouldn't</li>
+          <li>Context fills up fast; falls apart past a few hundred files</li>
+        </ul>
+      </div>
+      <div class="compare-card with">
+        <div class="compare-head"><span class="compare-dot"></span>With llm-index</div>
+        <ul>
+          <li>A query returns only the matching method's file:line refs — usually under 10% of the file</li>
+          <li>The agent opens exactly those lines and edits exactly that part, nothing else</li>
+          <li>Callers and call chain come along, so understanding stays intact</li>
+          <li>Works the same with any agent or LLM — the index is just markdown + SQLite it can read</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2 class="section-label">One index, every tool</h2>
+    <p class="section-intro">There's no plugin and no lock-in. The index is plain markdown
+      and a SQLite file — anything that can read a file can use it.</p>
+
+    <div class="card">
+      <span class="corner-square"></span>
+      <div class="edge-list">
+        <div class="edge-row">
+          <span class="node-chip"><span class="node-type">Input</span>Your repo</span>
+          <span class="edge-arrow">&#8594; INDEXED BY &#8594;</span>
+          <span class="node-chip"><span class="node-type">Tool</span>llm-index</span>
+        </div>
+        <div class="edge-row">
+          <span class="node-chip"><span class="node-type">Tool</span>llm-index</span>
+          <span class="edge-arrow">&#8594; WRITES &#8594;</span>
+          <span class="node-chip"><span class="node-type">Output</span>tree / skeleton / deps / graph.db</span>
+        </div>
+        <div class="edge-row">
+          <span class="node-chip"><span class="node-type">Query</span>query OrderService</span>
+          <span class="edge-arrow">&#8594; RETURNS &#8594;</span>
+          <span class="node-chip"><span class="node-type">Output</span>context.md (file:line refs only)</span>
+        </div>
+        <div class="edge-row">
+          <span class="node-chip"><span class="node-type">Output</span>context.md</span>
+          <span class="edge-arrow">&#8594; FEEDS &#8594;</span>
+          <span class="node-chip"><span class="node-type">Agent</span>Claude Code &middot; Cursor &middot; Copilot
+            &middot; Aider &middot; any LLM</span>
+        </div>
+        <div class="edge-row">
+          <span class="node-chip"><span class="node-type">Agent</span>Your agent</span>
+          <span class="edge-arrow">&#8594; EDITS &#8594;</span>
+          <span class="node-chip"><span class="node-type">Result</span>Exactly the right lines — nothing else</span>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-label">The knowledge graph</h2>
+    <p class="section-intro">Every class and method becomes a node; every Spring <code>@GetMapping</code>-style
+      annotation becomes an endpoint node. Relationships between them become typed edges — this is the actual model
+      written to <code>graph.db</code>:</p>
+
+    <div class="card">
+      <span class="corner-square"></span>
+      <div class="edge-list">
+        <div class="edge-row">
+          <span class="node-chip"><span class="node-type">Class</span>OrderService</span>
+          <span class="edge-arrow">&#8594; CONTAINS &#8594;</span>
+          <span class="node-chip"><span class="node-type">Method</span>OrderService.createOrder</span>
+        </div>
+        <div class="edge-row">
+          <span class="node-chip"><span class="node-type">Method</span>OrderService.createOrder</span>
+          <span class="edge-arrow">&#8594; CALLS &#8594;</span>
+          <span class="node-chip"><span class="node-type">Method</span>PaymentClient.charge</span>
+        </div>
+        <div class="edge-row">
+          <span class="node-chip"><span class="node-type">Class</span>OrderService</span>
+          <span class="edge-arrow">&#8594; USES &#8594;</span>
+          <span class="node-chip"><span class="node-type">Class</span>PaymentClient</span>
+        </div>
+        <div class="edge-row">
+          <span class="node-chip"><span class="node-type">Method</span>OrderController.create</span>
+          <span class="edge-arrow">&#8594; EXPOSES &#8594;</span>
+          <span class="node-chip"><span class="node-type">Endpoint</span>POST /orders</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="section-intro" style="margin-top: 1.5rem;">A query walks these edges outward with a recursive SQL
+      query, so "what does this call, and what does that call" resolves in one pass instead of N follow-up
+      questions:</p>
+
+    <div class="card">
+      <span class="corner-square"></span>
+      <pre><code>WITH RECURSIVE chain(name, depth) AS (
+  SELECT name, 0 FROM nodes WHERE name LIKE 'OrderService%'
+  UNION
+  SELECT e.dst, c.depth + 1 FROM edges e
+  JOIN chain c ON e.src = c.name
+  WHERE e.predicate IN ('CALLS','USES') AND c.depth &lt; 3
+)
+SELECT DISTINCT name, depth FROM chain WHERE depth &gt; 0 ORDER BY depth;</code></pre>
+    </div>
+    <p class="option-foot" style="margin-bottom: 3rem;">It's a plain <code>.db</code> file —
+      <code>graph.db</code> opens in any SQLite client if you want to write your own queries against
+      <code>nodes(name, type, file_path, line_no)</code> and <code>edges(src, predicate, dst, file_path)</code>.
+    </p>
+
     <h2 class="section-label">Example output</h2>
     <p class="section-intro">Querying <code>OrderService</code> after indexing returns something like this — small
-      enough to paste directly into a prompt.</p>
+      enough to paste directly into a prompt, whatever tool you're using.</p>
 
     <div class="card">
       <span class="corner-square"></span>
@@ -113,8 +264,10 @@ Read only the files listed above. Start at the file:line refs.</code></pre>
         <li><code>02-skeleton.md</code><span>Every class's fields and method signatures, with line numbers</span></li>
         <li><code>03-dependencies.md</code><span>Which classes use which — a flat dependency list</span></li>
         <li><code>graph.db</code><span>SQLite knowledge graph (nodes/edges) you can query repeatedly</span></li>
-        <li><code>context.md</code><span>Written on each query — matches, impact, and call chain for one term</span></li>
-        <li><code>INSTRUCTIONS.md</code><span>Tells the LLM how to read the rest, so it doesn't ingest the whole repo</span></li>
+        <li><code>context.md</code><span>Written on each query — matches, impact, and call chain for one term</span>
+        </li>
+        <li><code>INSTRUCTIONS.md</code><span>Tells the LLM how to read the rest, so it doesn't ingest the whole
+            repo</span></li>
       </ul>
     </div>
 
