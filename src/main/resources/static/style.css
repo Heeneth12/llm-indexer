@@ -98,8 +98,8 @@ code {
 }
 
 .wordmark-dot {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   background: var(--primary);
   flex-shrink: 0;
 }
@@ -676,6 +676,7 @@ input[type=number]:focus {
 #tab-tree:checked~.tab-labels label[for=tab-tree],
 #tab-skeleton:checked~.tab-labels label[for=tab-skeleton],
 #tab-deps:checked~.tab-labels label[for=tab-deps],
+#tab-graph:checked~.tab-labels label[for=tab-graph],
 #tab-query:checked~.tab-labels label[for=tab-query] {
   background: var(--ink);
   color: var(--on-dark);
@@ -684,6 +685,7 @@ input[type=number]:focus {
 #tab-tree:checked~.panels #panel-tree,
 #tab-skeleton:checked~.panels #panel-skeleton,
 #tab-deps:checked~.panels #panel-deps,
+#tab-graph:checked~.panels #panel-graph,
 #tab-query:checked~.panels #panel-query {
   display: block;
 }

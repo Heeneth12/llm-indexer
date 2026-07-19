@@ -1,6 +1,9 @@
 package com.llm.indexer.web;
 
+import com.llm.indexer.viz.GraphVisualizer;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -64,6 +67,21 @@ public class WebController {
             }
         }
         return "job";
+    }
+
+    @GetMapping("/jobs/{id}/graph")
+    public ResponseEntity<String> viewGraph(@PathVariable String id, @RequestParam(required = false) String filter,
+                                             @RequestParam(required = false) Integer hops) {
+        IndexJob job = jobOrNotFound(id);
+        if (job.getStatus() != IndexJob.Status.DONE) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Job is not indexed yet");
+        }
+        try {
+            String html = GraphVisualizer.render(job.graphDb(), filter, hops);
+            return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not render graph");
+        }
     }
 
     @GetMapping("/jobs/{id}/file")

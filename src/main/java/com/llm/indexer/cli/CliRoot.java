@@ -8,7 +8,7 @@ import picocli.CommandLine.Command;
     version = "indexer 0.1.0",
     mixinStandardHelpOptions = true,
     description = "Generates an LLM-friendly index of your codebase (tree, skeletons, deps, knowledge graph).",
-    subcommands = { BuildCommand.class, QueryCommand.class }
+    subcommands = { BuildCommand.class, QueryCommand.class, VisualizeCommand.class }
 )
 public class CliRoot implements Runnable {
 

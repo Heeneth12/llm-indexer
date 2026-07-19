@@ -14,7 +14,7 @@ import java.util.Set;
 @ConfigurationPropertiesScan
 public class IndexerApplication {
 
-	private static final Set<String> CLI_SUBCOMMANDS = Set.of("build", "query");
+	private static final Set<String> CLI_SUBCOMMANDS = Set.of("build", "query", "visualize");
 
 	public static void main(String[] args) {
 		if (args.length > 0 && CLI_SUBCOMMANDS.contains(args[0])) {

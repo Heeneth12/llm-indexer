@@ -26,6 +26,24 @@ Output goes to `.llm-index/` in the target project: `01-tree.md`, `02-skeleton.m
 Rebuilds are incremental — only changed files (by SHA-256) are re-parsed — unless you
 pass `--full`.
 
+### Visualizing the graph
+
+```bash
+java -jar target/llm-index-exec.jar visualize                    # whole graph, opens browser
+java -jar target/llm-index-exec.jar visualize --filter Order     # only Order-related nodes
+java -jar target/llm-index-exec.jar visualize --filter Order --hops 2   # + 2 hops of CALLS/USES
+```
+
+Writes a single self-contained `.llm-index/graph.html` (vis-network, loaded from a CDN — no
+server needed to view it). Class/Method/Endpoint nodes are colored differently; drag nodes
+around, double-click one to isolate its neighborhood, or use the search box. The same rendering
+is available in the web app under a repo's **Graph** tab.
+
+One real limitation: force-directed layouts turn into an unreadable hairball past a few hundred
+nodes, and a real project easily has thousands once every method counts as a node. `--filter`
+(and `--filter` + `--hops` for a proper neighborhood view) is how you keep it readable on
+anything but a small repo — the "Classes only" checkbox in the generated page helps too.
+
 ## Use as a Maven dependency
 
 Published via [JitPack](https://jitpack.io/#Heeneth12/llm-indexer) — built straight from this
@@ -61,8 +79,8 @@ worth splitting into a lighter `core`-only module later if that matters to you.
 
 Open `http://localhost:8080`, paste a public git URL. The server shallow-clones it
 into a temporary workspace, runs the same indexing engine as the CLI, and gives you
-a tabbed view (Tree / Skeleton / Dependencies / Query) plus a source viewer that jumps
-straight to the file:line a query result points at. Jobs and their temp clones are
+a tabbed view (Tree / Skeleton / Dependencies / Graph / Query) plus a source viewer that
+jumps straight to the file:line a query result points at. Jobs and their temp clones are
 evicted after 30 minutes.
 
 Only `http://` / `https://` URLs are accepted; local/private addresses are rejected.
@@ -127,7 +145,8 @@ src/main/java/com/llm/indexer/
 ├── core/                     – TreeBuilder, SkeletonBuilder, DepsBuilder, GraphStore,
 │                                Hashes, IndexService (shared by CLI and web)
 ├── query/                    – QueryService: graph traversal shared by CLI and web
-├── cli/                      – picocli commands (build, query)
+├── viz/                      – GraphVisualizer: renders graph.db as an interactive HTML page
+├── cli/                      – picocli commands (build, query, visualize)
 └── web/                      – Spring MVC controller, git cloning, job lifecycle
 src/main/resources/
 ├── templates/                – Thymeleaf views
