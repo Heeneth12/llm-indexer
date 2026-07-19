@@ -21,7 +21,8 @@ public class WebController {
     }
 
     @GetMapping("/")
-    public String index() {
+    public String index(Model model) {
+        jobService.getJob(StartupIndexRunner.STARTUP_JOB_ID).ifPresent(job -> model.addAttribute("startupJob", job));
         return "index";
     }
 

@@ -67,6 +67,30 @@ evicted after 30 minutes.
 
 Only `http://` / `https://` URLs are accepted; local/private addresses are rejected.
 
+### Auto-index on startup
+
+For a deployment where one specific repo should always be indexed and ready — no one has
+to run a CLI command or paste a URL — set these in `application.properties` (or as env vars
+/ `-D` flags) and it happens automatically when the app boots:
+
+```properties
+llm-index.startup.enabled=true
+
+# either a local path already on disk (e.g. a mounted volume)...
+llm-index.startup.path=/path/to/your/repo
+
+# ...or a git URL, cloned on first boot and pulled on later restarts
+llm-index.startup.repo-url=https://github.com/owner/repo.git
+llm-index.startup.work-dir=/data/llm-index-clone
+
+llm-index.startup.full=false               # force a full re-parse every run
+llm-index.startup.reindex-on-restart=true  # false = reuse the existing index instead of rebuilding
+```
+
+Once configured, the result is always at `/jobs/startup` and linked from the landing page.
+This job is exempt from the 30-minute eviction that normal paste-a-URL jobs get, and its
+directory is never auto-deleted — safe to point `path` at your real working repo.
+
 ## Docker
 
 ```bash

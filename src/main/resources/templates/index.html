@@ -36,6 +36,16 @@
   <main class="wrap">
     <div class="error" th:if="${error}" th:text="${error}"></div>
 
+    <div class="card" th:if="${startupJob}" style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+      <span class="corner-square"></span>
+      <div>
+        <strong>Configured repo:</strong>
+        <span th:text="${startupJob.repoUrl}"></span>
+        <span class="badge-tag" style="margin-left:0.5rem;" th:classappend="${startupJob.status}" th:text="${startupJob.status}"></span>
+      </div>
+      <a class="btn-outline" style="padding:0.6rem 1rem;" th:href="@{/jobs/{id}(id=${startupJob.id})}">View index &rarr;</a>
+    </div>
+
     <div class="feature-row">
       <div class="card feature-card">
         <span class="corner-square"></span>

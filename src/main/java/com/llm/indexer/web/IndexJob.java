@@ -17,6 +17,7 @@ public class IndexJob {
     private volatile Status status = Status.PENDING;
     private volatile IndexResult result;
     private volatile String errorMessage;
+    private volatile boolean permanent = false;
 
     public IndexJob(String id, String repoUrl, Path tempDir) {
         this.id = id;
@@ -38,6 +39,10 @@ public class IndexJob {
 
     public String getErrorMessage() { return errorMessage; }
     public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
+
+    /** Permanent jobs (configured via llm-index.startup.*) are never evicted or deleted by the TTL sweep. */
+    public boolean isPermanent() { return permanent; }
+    public void setPermanent(boolean permanent) { this.permanent = permanent; }
 
     public Path graphDb() { return tempDir.resolve(".llm-index").resolve("graph.db"); }
 }

@@ -35,6 +35,32 @@ public class GitCloner {
         }
     }
 
+    /** Clones into targetDir if it isn't a git repo yet; otherwise fast-forward pulls it. */
+    public static void cloneOrUpdate(String repoUrl, Path targetDir) throws IOException, InterruptedException {
+        if (java.nio.file.Files.isDirectory(targetDir.resolve(".git"))) {
+            pull(targetDir);
+        } else {
+            java.nio.file.Files.createDirectories(targetDir.getParent());
+            clone(repoUrl, targetDir);
+        }
+    }
+
+    private static void pull(Path repoDir) throws IOException, InterruptedException {
+        Process process = new ProcessBuilder("git", "-C", repoDir.toString(), "pull", "--ff-only")
+                .redirectErrorStream(true)
+                .start();
+
+        boolean finished = process.waitFor(CLONE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        if (!finished) {
+            process.destroyForcibly();
+            throw new IOException("git pull timed out after " + CLONE_TIMEOUT_SECONDS + "s");
+        }
+        String output = new String(process.getInputStream().readAllBytes());
+        if (process.exitValue() != 0) {
+            throw new IOException("git pull failed: " + output.trim());
+        }
+    }
+
     public static void validate(String repoUrl) throws IOException {
         URI uri;
         try {

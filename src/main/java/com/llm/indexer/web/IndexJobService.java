@@ -67,6 +67,39 @@ public class IndexJobService {
         }
     }
 
+    /**
+     * Registers a job backed by config (llm-index.startup.*) rather than a user request.
+     * Runs on the same executor as regular jobs, but is marked permanent immediately so
+     * the TTL sweep and shutdown cleanup never touch it or delete its directory — root
+     * may be the caller's own real repo, not a disposable clone.
+     */
+    public void registerAndRunPermanentJob(String id, String label, Path root, boolean full, boolean reindexOnRestart) {
+        IndexJob job = new IndexJob(id, label, root);
+        job.setPermanent(true);
+        jobs.put(id, job);
+        executor.submit(() -> runPermanentJob(job, full, reindexOnRestart));
+    }
+
+    private void runPermanentJob(IndexJob job, boolean full, boolean reindexOnRestart) {
+        job.setStatus(IndexJob.Status.RUNNING);
+        try {
+            Path outDir = job.getTempDir().resolve(".llm-index");
+            boolean alreadyIndexed = Files.exists(outDir.resolve("graph.db"))
+                    && Files.exists(outDir.resolve("01-tree.md"));
+
+            IndexResult result = (alreadyIndexed && !reindexOnRestart)
+                    ? IndexService.loadExisting(outDir)
+                    : IndexService.build(job.getTempDir(), outDir, full);
+
+            job.setResult(result);
+            job.setStatus(IndexJob.Status.DONE);
+        } catch (Exception e) {
+            log.error("Startup job {} failed: {}", job.getId(), e.getMessage(), e);
+            job.setErrorMessage(e.getMessage() == null ? e.toString() : e.getMessage());
+            job.setStatus(IndexJob.Status.FAILED);
+        }
+    }
+
     public Optional<IndexJob> getJob(String id) {
         return Optional.ofNullable(jobs.get(id));
     }
@@ -88,6 +121,7 @@ public class IndexJobService {
     void sweepExpiredJobs() {
         Instant cutoff = Instant.now().minus(JOB_TTL);
         jobs.values().removeIf(job -> {
+            if (job.isPermanent()) return false;
             boolean expired = job.getCreatedAt().isBefore(cutoff);
             if (expired) deleteQuietly(job.getTempDir());
             return expired;
@@ -97,7 +131,7 @@ public class IndexJobService {
     @PreDestroy
     void shutdown() {
         executor.shutdownNow();
-        jobs.values().forEach(job -> deleteQuietly(job.getTempDir()));
+        jobs.values().stream().filter(job -> !job.isPermanent()).forEach(job -> deleteQuietly(job.getTempDir()));
     }
 
     private void deleteQuietly(Path dir) {

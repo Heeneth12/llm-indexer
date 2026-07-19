@@ -52,6 +52,24 @@ public class IndexService {
         return new IndexResult(treeMd, skeletonMd, depsMd, dbPath, javaFiles.size(), changed.size());
     }
 
+    /** Reconstructs an IndexResult from a previous build's output, without re-parsing anything. */
+    public static IndexResult loadExisting(Path outDir) throws IOException {
+        String treeMd = Files.readString(outDir.resolve("01-tree.md"));
+        String skeletonMd = Files.readString(outDir.resolve("02-skeleton.md"));
+        String depsMd = Files.readString(outDir.resolve("03-dependencies.md"));
+        Path dbPath = outDir.resolve("graph.db");
+
+        int filesTotal = 0;
+        Path stateFile = outDir.resolve("state.json");
+        if (Files.exists(stateFile)) {
+            try (Stream<String> lines = Files.lines(stateFile)) {
+                filesTotal = (int) lines.count();
+            }
+        }
+
+        return new IndexResult(treeMd, skeletonMd, depsMd, dbPath, filesTotal, 0);
+    }
+
     private static String instructions() {
         return """
             # For the LLM: how to use this index
