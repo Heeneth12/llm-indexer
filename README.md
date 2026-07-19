@@ -14,20 +14,49 @@ Ships as one jar, two ways to use it:
 
 ```bash
 ./mvnw -q -DskipTests clean package
-java -jar target/indexer-*.jar build .          # index the current directory
-java -jar target/indexer-*.jar query MyClass    # search the graph, writes context.md
+java -jar target/llm-index-exec.jar build .          # index the current directory
+java -jar target/llm-index-exec.jar query MyClass    # search the graph, writes context.md
 ```
+
+Or grab a prebuilt jar from the [Releases page](https://github.com/Heeneth12/llm-indexer/releases)
+instead of building it yourself.
 
 Output goes to `.llm-index/` in the target project: `01-tree.md`, `02-skeleton.md`,
 `03-dependencies.md`, `graph.db`, and `INSTRUCTIONS.md` telling an LLM how to read them.
 Rebuilds are incremental — only changed files (by SHA-256) are re-parsed — unless you
 pass `--full`.
 
+## Use as a Maven dependency
+
+Published via [JitPack](https://jitpack.io/#Heeneth12/llm-indexer) — built straight from this
+repo, no separate publish step:
+
+```xml
+<repositories>
+  <repository>
+    <id>jitpack.io</id>
+    <url>https://jitpack.io</url>
+  </repository>
+</repositories>
+
+<dependency>
+  <groupId>com.github.Heeneth12</groupId>
+  <artifactId>llm-indexer</artifactId>
+  <version>v0.4.0</version> <!-- or any tag/commit from the Releases page -->
+</dependency>
+```
+
+This resolves to the plain `llm-index.jar` (not the executable one), so
+`com.llm.indexer.core.IndexService` and `com.llm.indexer.query.QueryService` land on your
+classpath like any normal library. Note it currently pulls in the full Spring Boot web stack
+transitively too, since core/CLI/web all live in one Maven module — fine for a quick embed,
+worth splitting into a lighter `core`-only module later if that matters to you.
+
 ## Web app
 
 ```bash
 ./mvnw spring-boot:run
-# or: java -jar target/indexer-*.jar
+# or: java -jar target/llm-index-exec.jar
 ```
 
 Open `http://localhost:8080`, paste a public git URL. The server shallow-clones it

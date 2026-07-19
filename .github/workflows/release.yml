@@ -16,14 +16,16 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
           cache: maven
 
-      - name: Build fat jar
-        run: mvn -B clean package
+      - name: Build jars (thin lib jar + runnable exec jar)
+        run: mvn -B -DskipTests clean package
 
-      - name: Create GitHub release with jar
+      - name: Create GitHub release with jars
         uses: softprops/action-gh-release@v2
         with:
-          files: target/llm-index.jar
+          files: |
+            target/llm-index.jar
+            target/llm-index-exec.jar
           generate_release_notes: true

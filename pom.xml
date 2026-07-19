@@ -15,7 +15,10 @@
 	<description/>
 	<url/>
 	<licenses>
-		<license/>
+		<license>
+			<name>MIT License</name>
+			<url>https://github.com/Heeneth12/llm-indexer/blob/main/LICENSE</url>
+		</license>
 	</licenses>
 	<developers>
 		<developer/>
@@ -78,10 +81,26 @@
 	</dependencies>
 
 	<build>
+		<finalName>llm-index</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>repackage</id>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
+						<configuration>
+							<!-- Attach the runnable jar under a classifier instead of replacing
+							     the main artifact, so `mvn install` (and JitPack, which just runs
+							     that) still installs a plain jar with classes on the normal
+							     classpath, usable as a library dependency and not just `java -jar`. -->
+							<classifier>exec</classifier>
+						</configuration>
+					</execution>
+				</executions>
 				<configuration>
 					<mainClass>com.llm.indexer.IndexerApplication</mainClass>
 					<excludes>

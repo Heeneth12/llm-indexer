@@ -14,6 +14,6 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY --from=build /app/target/indexer-*.jar app.jar
+COPY --from=build /app/target/llm-index-exec.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
