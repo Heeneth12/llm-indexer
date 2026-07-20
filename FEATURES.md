@@ -31,6 +31,9 @@ on a running instance.
   nodes surface first instead of raw traversal order.
 - **Inline signatures** — a match shows its method signature directly in the result, so a single
   query often doesn't require opening `02-skeleton.md` at all.
+- **`--body` source inlining** — `query --body <term>` slices each match's exact source text
+  (JavaParser's own begin/end lines, not reformatted) straight into the result, skipping the
+  follow-up file `Read` an agent would otherwise need.
 - **`context.md` output** — every query writes a ready-to-paste block: matches, impact, call
   chain, and an instructions footer, sized to fit a prompt instead of a whole file.
 
@@ -104,6 +107,11 @@ on a running instance.
   clusters (e.g. `email`/`mail`/`gmail`/`smtp`/`notification`) expands each query token before
   the full-text search, closing the gap between how something is *named* and how someone might
   *ask* for it, with zero ML involved.
+- **Porter stemming** (`core/Stemmer.java`) — the classic 1980 suffix-stripping algorithm,
+  reimplemented from the published rule tables (no dependency), applied symmetrically to both
+  indexed tokens and query tokens. Collapses inflected forms (`notifying`/`notifier` → `notifi`,
+  matching an indexed `notification`) that the curated synonym table was never taught about,
+  without needing a manual entry for every variant.
 - **Tiered fallback matching** — exact substring → tokenized/synonym full-text → fuzzy
   suggestion, each tier only invoked if the previous one returns nothing, trading off precision
   and recall deliberately rather than picking one globally.

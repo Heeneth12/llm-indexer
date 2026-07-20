@@ -10,7 +10,11 @@ public record QueryResult(
     List<String> suggestions,
     String markdown
 ) {
-    public record Match(String name, String type, String filePath, int line, String signature) {}
+    public record Match(String name, String type, String filePath, int line, String signature, String body) {
+        public Match(String name, String type, String filePath, int line, String signature) {
+            this(name, type, filePath, line, signature, null);
+        }
+    }
 
     public record CallChainEntry(String name, int depth) {}
 }

@@ -21,6 +21,9 @@ public class QueryCommand implements Callable<Integer> {
     @Option(names = {"--hops"}, defaultValue = "3", description = "Traversal depth")
     int hops;
 
+    @Option(names = {"--body"}, description = "Include each match's exact source text (skips the follow-up file Read)")
+    boolean body;
+
     @Override
     public Integer call() throws Exception {
         Path db = Path.of(dir, "graph.db");
@@ -29,7 +32,7 @@ public class QueryCommand implements Callable<Integer> {
             return 1;
         }
 
-        var result = QueryService.query(db, term, hops);
+        var result = QueryService.query(db, term, hops, body);
 
         Path outFile = Path.of(dir, "context.md");
         Files.writeString(outFile, result.markdown());

@@ -40,12 +40,14 @@ pass `--full`.
 
 `query` matching is tiered: an exact/substring match against the identifier first (precise,
 zero false positives for a known name), and only if that finds nothing, a full-text fallback —
-the term is tokenized the same way identifiers are (`GmailService` → `gmail`, `service`) and
+the term is tokenized the same way identifiers are (`GmailService` → `gmail`, `service`),
+Porter-stemmed (`notifying`/`notifier` → `notifi`, matching an indexed `notification`), and
 expanded through a small synonym table, so `query "email notification"` finds `GmailService` /
 `NotificationService` even though "email" is never a literal substring of either. A query that
 still matches nothing returns edit-distance suggestions instead of a silent empty result.
 Matches also show their signature inline, so you often don't need `02-skeleton.md` at all for a
-single lookup.
+single lookup — and `query --body <term>` inlines each match's exact source text (sliced by
+line, not reformatted), skipping the follow-up file `Read` entirely.
 
 ### Visualizing the graph
 

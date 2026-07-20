@@ -1,6 +1,7 @@
 package com.llm.indexer.query;
 
 import com.llm.indexer.core.GraphStore;
+import com.llm.indexer.core.Stemmer;
 import com.llm.indexer.core.Tokenizer;
 
 import java.nio.file.Path;
@@ -24,9 +25,11 @@ import java.util.stream.Collectors;
  *      zero false positives when the caller already knows the name.
  *   2. Only if that finds nothing: the FTS5 index (GraphStore.nodes_fts), with
  *      the term tokenized the same way identifiers are (camelCase/snake_case
- *      split) and expanded through a small synonym table, ranked by bm25.
- *      This is what turns "email notification" into a hit on GmailService /
- *      NotificationService even though "email" isn't a substring of either.
+ *      split), expanded through a small synonym table and Porter-stemmed
+ *      (Stemmer), ranked by bm25. This is what turns "email notification"
+ *      into a hit on GmailService/NotificationService even though "email"
+ *      isn't a substring of either, and what makes "notifying"/"notifier"
+ *      match an indexed "notification" without a hand-curated synonym entry.
  *   3. Only if both find nothing: edit-distance suggestions, so a miss reads
  *      as "did you mean X" instead of a silent empty result.
  * Tier 2 alone (skipping tier 1) tends to surface unrelated nodes that merely
@@ -42,6 +45,12 @@ public class QueryService {
     private static final int MAX_CALL_CHAIN = 25;
 
     public static QueryResult query(Path dbPath, String term, int hops) throws SQLException {
+        return query(dbPath, term, hops, false);
+    }
+
+    /** includeBody: also slice each match's exact source text off disk (SourceExtractor).
+     *  Costs one JavaParser pass per match, so it's opt-in -- the CLI's --body flag. */
+    public static QueryResult query(Path dbPath, String term, int hops, boolean includeBody) throws SQLException {
         List<QueryResult.Match> matches = new ArrayList<>();
         List<String> usedBy = new ArrayList<>();
         List<QueryResult.CallChainEntry> callChain = new ArrayList<>();
@@ -50,6 +59,14 @@ public class QueryService {
         try (GraphStore graph = new GraphStore(dbPath)) {
             matches.addAll(exactMatches(graph, term));
             if (matches.isEmpty()) matches.addAll(fuzzyTokenMatches(graph, term));
+
+            if (includeBody && !matches.isEmpty()) {
+                Path root = dbPath.toAbsolutePath().getParent().getParent();
+                matches = matches.stream()
+                        .map(m -> new QueryResult.Match(m.name(), m.type(), m.filePath(), m.line(), m.signature(),
+                                SourceExtractor.extractBody(root, m.filePath(), m.name(), m.line())))
+                        .toList();
+            }
 
             if (matches.isEmpty()) {
                 suggestions.addAll(fuzzySuggestions(graph, term));
@@ -151,7 +168,10 @@ public class QueryService {
         if (queryTokens.isEmpty()) queryTokens = List.of(term.toLowerCase());
 
         LinkedHashSet<String> expanded = new LinkedHashSet<>();
-        for (String t : queryTokens) expanded.addAll(Synonyms.expand(t));
+        for (String t : queryTokens) {
+            expanded.addAll(Synonyms.expand(t));
+            expanded.add(Stemmer.stem(t));
+        }
 
         return expanded.stream()
                 .map(t -> "\"" + t.replace("\"", "") + "\"*")
@@ -206,6 +226,8 @@ public class QueryService {
             if (m.signature() != null && !m.signature().isBlank())
                 ctx.append("  `").append(m.signature()).append("`");
             ctx.append("\n");
+            if (m.body() != null && !m.body().isBlank())
+                ctx.append("  ```java\n").append(m.body().indent(2)).append("  ```\n");
         }
 
         ctx.append("\n## Used by (impact if changed)\n");

@@ -3,6 +3,7 @@ package com.llm.indexer.core;
 import java.nio.file.Path;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 public class GraphStore implements AutoCloseable {
@@ -56,8 +57,12 @@ public class GraphStore implements AutoCloseable {
                  "INSERT INTO nodes_fts(name, tokens, signature) VALUES (?, ?, ?)")) {
             del.setString(1, name);
             del.executeUpdate();
+            List<String> rawTokens = Tokenizer.tokens(name);
+            LinkedHashSet<String> withStems = new LinkedHashSet<>(rawTokens);
+            for (String t : rawTokens) withStems.add(Stemmer.stem(t));
+
             ins.setString(1, name);
-            ins.setString(2, Tokenizer.tokenize(name));
+            ins.setString(2, String.join(" ", withStems));
             ins.setString(3, sig == null ? "" : sig);
             ins.executeUpdate();
         } catch (SQLException e) { throw new RuntimeException(e); }
