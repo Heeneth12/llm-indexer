@@ -81,8 +81,15 @@ app instead of the CLI, set `llm-index.startup.enabled=true` + `path` in
 ## Step 2 — Wire up your agent
 
 The pattern is the same everywhere: add an instructions file the agent reads automatically,
-telling it to run `llm-index query <term>` before editing instead of reading whole files or
-grepping. Below is the exact snippet and file for each tool.
+telling it to (1) query before editing and (2) rebuild the index itself after making structural
+changes — so it stays self-sufficient, no human re-running anything mid-session. Below is the
+exact snippet and file for each tool.
+
+**Use the full `java -jar /absolute/path/llm-index-exec.jar` command in every snippet below —
+never the `llm-index` shell alias**, even if you've set one up for your own interactive use.
+Aliases only exist in interactive shells; agents run commands non-interactively, so an alias
+that works fine when you type it yourself will fail with `command not found` when the agent
+tries to use it. The absolute `java -jar ...` form works everywhere, in any context.
 
 ### Claude Code
 
@@ -93,11 +100,15 @@ File: `CLAUDE.md` at the repo root (Claude Code reads this automatically as proj
 
 This repo is indexed with llm-index. Before editing, run:
 
-    java -jar /path/to/llm-index-exec.jar query <ClassName or keyword>
+    java -jar /absolute/path/to/llm-index-exec.jar query <ClassName or keyword>
 
 Read only the file:line references it returns — don't grep or open whole files speculatively.
 If you need to trace further outward (what calls this, what it calls), add `--hops 2` or `--hops 3`.
-Rebuild the index after structural changes: `java -jar /path/to/llm-index-exec.jar build .`
+
+After making structural changes (new/renamed/deleted classes or methods), rebuild the index
+yourself before your next query — don't wait to be asked:
+
+    java -jar /absolute/path/to/llm-index-exec.jar build .
 ```
 
 ### Cursor
@@ -110,9 +121,12 @@ description: Use llm-index for code navigation before editing
 alwaysApply: true
 ---
 
-Before editing code, run `java -jar /path/to/llm-index-exec.jar query <term>` to find exact
-file:line references instead of reading files speculatively. Add `--hops N` to trace callers
-or callees further outward.
+Before editing code, run `java -jar /absolute/path/to/llm-index-exec.jar query <term>` to find
+exact file:line references instead of reading files speculatively. Add `--hops N` to trace
+callers or callees further outward.
+
+After structural changes (new/renamed/deleted classes or methods), rebuild the index yourself
+before the next query: `java -jar /absolute/path/to/llm-index-exec.jar build .`
 ```
 
 ### GitHub Copilot (agent mode)
@@ -120,13 +134,15 @@ or callees further outward.
 File: `.github/copilot-instructions.md` (natively read by Copilot's agent mode in VS Code).
 
 ```markdown
-Before making changes, run `java -jar /path/to/llm-index-exec.jar query <ClassName>` from the
-repo root to locate the exact file:line references involved, rather than searching broadly.
+Before making changes, run `java -jar /absolute/path/to/llm-index-exec.jar query <ClassName>`
+from the repo root to locate the exact file:line references involved, rather than searching
+broadly. After structural changes (new/renamed/deleted classes or methods), rebuild the index
+yourself before the next query: `java -jar /absolute/path/to/llm-index-exec.jar build .`
 ```
 
 ### Windsurf
 
-File: `.windsurfrules` — same instruction as Cursor's above.
+File: `.windsurfrules` — same instructions as Cursor's above.
 
 ### Aider
 
@@ -150,6 +166,22 @@ llm-index query OrderService --hops 2
 ```
 
 Paste the printed `context.md` content into the chat as your first message.
+
+## Reindexing mid-session: three ways, pick one
+
+While an agent is actively editing, the index it's reading from can go stale. There are three
+ways to bring it back in sync, and they're not equivalent:
+
+| Way | How | Good for |
+|---|---|---|
+| **CLI (recommended for agents)** | Agent runs `java -jar /absolute/path/llm-index-exec.jar build .` itself, mid-session, whenever it's made a structural change | Fully autonomous — no human, no restart, just part of the agent's own workflow. This is what the Step 2 snippets above set up. |
+| **Restart the app** | `llm-index.startup.reindex-on-restart=true` rebuilds automatically every time the app boots | Fine for "index is refreshed once per deploy," wrong tool for "refresh after this one edit" — restarting a whole app mid-edit is heavy-handed. |
+| **API** | `POST /llm-indexer/index` | This creates a **new** job from a git URL (the paste-a-URL flow) — it does not refresh an existing startup job in place. There's currently no "reindex this job now" endpoint; if you need that, restart or use the CLI. |
+
+For an agent editing code live, the CLI is the right choice — it's the only one of the three
+that doesn't require either a human, a full app restart, or a feature that doesn't exist yet.
+That's exactly what the `build .` line in each Step 2 snippet is for: the agent runs it itself
+right after a structural change, before its next query.
 
 ## Step 3 — Use it efficiently
 
