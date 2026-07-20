@@ -5,6 +5,23 @@ HTTP API) that any agent with shell or network access can call. "Integrating" it
 your agent to use it instead of reading files blindly. This guide covers: indexing a repo,
 wiring each major agent up to call it, and getting the most out of it once it's wired up.
 
+## Three separate things — don't mix these up
+
+This trips people up, so up front:
+
+| | What it is | Where you get it | What it's for |
+|---|---|---|---|
+| **The CLI** | A runnable jar, `llm-index-exec.jar` | Built **from the llm-indexer repo itself**, or downloaded from [Releases](https://github.com/Heeneth12/llm-indexer/releases) | `llm-index build .`, `query`, `visualize` — this whole guide |
+| **The Maven dependency** | A library jar, `llm-index.jar` (no classifier), via JitPack | Added to **your own project's** `pom.xml` | Embedding `IndexService`/`QueryService` as Java classes, or running the web UI/auto-index-on-startup *inside your own Spring Boot app* |
+| **The web app** | A running server, `/llm-indexer/**` | Either `java -jar llm-index-exec.jar` (no CLI args) standalone, or the Maven dependency wired into your own app | Browser UI, HTTP API |
+
+Adding the Maven dependency to your project's `pom.xml` does **not** give you a `llm-index`
+shell command anywhere — it only puts classes on that project's classpath. Running
+`./mvnw clean package` inside *your own* project builds *your own* jar, not
+`llm-index-exec.jar`. If `llm-index build .` says `command not found`, this is almost always
+why: the CLI jar was never built or downloaded in the first place, or it was but nothing set up
+a shell command pointing at it.
+
 ## Why bother
 
 Without an index, an agent either pastes whole files into its context (most of which is
@@ -13,23 +30,38 @@ or keyword returns only the matching file:line references — typically under 10
 code — plus what depends on it and its outward call chain. Same understanding, a fraction of the
 tokens, and edits land on the exact lines instead of nearby ones.
 
-## Step 0 — Get the jar
+## Step 0 — Get the CLI jar and make it a real command
 
 ```bash
-# build it yourself
+# Option A: build it — inside the llm-indexer repo, NOT your own project
+git clone https://github.com/Heeneth12/llm-indexer.git
+cd llm-indexer
 ./mvnw -q -DskipTests clean package
-# jar is at target/llm-index-exec.jar
+# jar is now at llm-indexer/target/llm-index-exec.jar
 
-# or grab a prebuilt one
-# https://github.com/Heeneth12/llm-indexer/releases
+# Option B: skip building entirely, download a prebuilt one
+# https://github.com/Heeneth12/llm-indexer/releases -> llm-index-exec.jar
 ```
 
-Put it somewhere stable and remember the path — every snippet below references
-`llm-index-exec.jar` directly. Aliasing it helps:
+`java -jar /path/to/llm-index-exec.jar build .` works immediately, from any directory, once you
+have the jar — no alias required. But typing the full `java -jar /path/...` every time is
+tedious, so make it a real command. In `~/.zshrc` (or `~/.bashrc`):
 
 ```bash
-alias llm-index='java -jar /path/to/llm-index-exec.jar'
+alias llm-index='java -jar /absolute/path/to/llm-index-exec.jar'
 ```
+
+Then **open a new terminal tab, or run `source ~/.zshrc`** — aliases only take effect in shells
+started (or reloaded) after you add them; your currently-open terminal won't pick it up on its
+own. Verify with:
+
+```bash
+llm-index --help
+```
+
+If that still says `command not found`, double check: (1) the path in the alias is correct and
+absolute, (2) you actually reloaded the shell, (3) you're editing the rc file for the shell
+you're actually using (`echo $SHELL` to check).
 
 ## Step 1 — Index the repo
 
