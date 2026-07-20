@@ -35,6 +35,15 @@ Output goes to `.llm-index/` in the target project: `01-tree.md`, `02-skeleton.m
 Rebuilds are incremental — only changed files (by SHA-256) are re-parsed — unless you
 pass `--full`.
 
+`query` matching is tiered: an exact/substring match against the identifier first (precise,
+zero false positives for a known name), and only if that finds nothing, a full-text fallback —
+the term is tokenized the same way identifiers are (`GmailService` → `gmail`, `service`) and
+expanded through a small synonym table, so `query "email notification"` finds `GmailService` /
+`NotificationService` even though "email" is never a literal substring of either. A query that
+still matches nothing returns edit-distance suggestions instead of a silent empty result.
+Matches also show their signature inline, so you often don't need `02-skeleton.md` at all for a
+single lookup.
+
 ### Visualizing the graph
 
 ```bash

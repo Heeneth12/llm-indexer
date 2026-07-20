@@ -92,12 +92,22 @@
         <div class="error" th:if="${queryError}" th:text="${queryError}"></div>
 
         <div th:if="${queryResult}">
+          <div th:if="${#lists.isEmpty(queryResult.matches) and not #lists.isEmpty(queryResult.suggestions)}">
+            <h3>No direct matches — did you mean</h3>
+            <ul class="result-list">
+              <li th:each="s : ${queryResult.suggestions}" th:text="${s}"></li>
+            </ul>
+          </div>
+
           <h3>Matching code</h3>
           <ul class="result-list">
             <li th:each="m : ${queryResult.matches}">
               <a th:href="@{/llm-indexer/jobs/{id}/file(id=${job.id}, path=${m.filePath}, line=${m.line})}"
                  th:text="${m.name} + ' (' + ${m.filePath} + ':' + ${m.line} + ')'"></a>
               <span style="color:var(--mute);font-size:0.8rem;font-weight:400;" th:text="' — ' + ${m.type}"></span>
+              <code th:if="${m.signature != null and !m.signature.isBlank()}"
+                    style="display:block; color:var(--mute); font-size:0.8rem; margin-top:0.15rem;"
+                    th:text="${m.signature}"></code>
             </li>
           </ul>
           <p th:if="${#lists.isEmpty(queryResult.matches)}" style="color:var(--mute)">No matches.</p>
