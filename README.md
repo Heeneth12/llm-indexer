@@ -16,6 +16,9 @@ Ships as one jar, two ways to use it:
 Full reference (architecture, every config property, every CLI command, every HTTP route) is
 also available in-app at `/llm-indexer/docs` once the web app is running.
 
+Wiring this up to Claude Code, Cursor, Copilot, Aider, Windsurf, or any other agent? See
+[INTEGRATION.md](INTEGRATION.md) for step-by-step setup and copy-paste config snippets.
+
 ## CLI
 
 ```bash
