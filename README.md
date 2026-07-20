@@ -19,6 +19,9 @@ also available in-app at `/llm-indexer/docs` once the web app is running.
 Wiring this up to Claude Code, Cursor, Copilot, Aider, Windsurf, or any other agent? See
 [INTEGRATION.md](INTEGRATION.md) for step-by-step setup and copy-paste config snippets.
 
+Want the full inventory — every feature, the tech stack, and the actual algorithms behind
+search/ranking/traversal? See [FEATURES.md](FEATURES.md).
+
 ## CLI
 
 ```bash
